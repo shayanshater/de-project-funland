@@ -8,3 +8,8 @@ variable "lambda_ingestion" {
   type    = string
   default = "ingestion"
 }
+
+variable "python_runtime" {
+  type    = string
+  default = "python3.13"
+}
