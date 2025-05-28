@@ -1,1 +1,10 @@
 .env
+
+**/.vscode/
+**/*egg*
+**/*.pyc
+**/.vscode
+**/*_cache
+**/*__pycache__*
+*coverage*
+venv/

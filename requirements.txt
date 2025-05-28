@@ -3,7 +3,6 @@ pandas
 python-dotenv
 pytest
 pytest-cov
-# schedule
 flake8
 black
 bandit
