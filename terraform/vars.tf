@@ -1,4 +1,4 @@
-variable "ingestion_bucket" {
+variable "ingestion_bucket_prefix" {
   type    = string
-  default = "funland-ingestion-bucket"
+  default = "funland-ingestion"
 }

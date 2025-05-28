@@ -1,8 +1,8 @@
 # Lambda IAM Role
 # ---------------
 
-# Define role 
-data "aws_iam_policy_document" "trust_policy" {
+# Define role: allows lambda to assume this role
+data "aws_iam_policy_document" "lambda_trust_policy" {
   statement {
     effect = "Allow"
 
@@ -15,10 +15,10 @@ data "aws_iam_policy_document" "trust_policy" {
   }
 }
 
-# Create
-resource "aws_iam_role" "lambda_ingestion_role" {
-  name_prefix        = 
-  assume_role_policy =
-}
+# # Create
+# resource "aws_iam_role" "lambda_ingestion_role" {
+#   name_prefix        = 
+#   assume_role_policy =
+# }
 
  
