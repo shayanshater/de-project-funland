@@ -54,7 +54,7 @@ lint:
 
 # Run tests
 unit-test:
-	$(call execute_in_env, PYTHONPATH=$(PYTHONPATH) pytest -vvrP)
+	$(call execute_in_env, PYTHONPATH=$(PYTHONPATH) pytest --testdox -vvrP)
 
 # Run coverage check and create a coverage.txt file
 check-coverage:

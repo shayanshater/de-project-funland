@@ -1,10 +1,14 @@
+python-dotenv # ==1.0.0
+pg8000 # ==1.30.3
+pytest # ==7.4.3
+pytest-testdox
 boto3
+moto
 pandas
-python-dotenv
-pytest
 pytest-cov
 flake8
 black
 bandit
 pip-audit
-moto
+
+
