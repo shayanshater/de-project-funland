@@ -19,11 +19,11 @@ resource "aws_lambda_function" "extract_lambda_handler" {
   filename      = "${path.module}/../deployment/handlers/extract.zip"
   function_name = var.lambda_ingestion
   role          = aws_iam_role.lambda_role.arn
-  handler       = extract.lambda_handler  
+  handler       = "extract.lambda_handler"  
   runtime = var.python_runtime
 
   source_code_hash = data.archive_file.lambda.output_base64sha256
-
+  layers = [aws_lambda_layer_version.lambda_layer.arn]
   environment {
     variables = {
       s3_bucket = aws_s3_bucket.ingestion_bucket.bucket
@@ -34,8 +34,8 @@ resource "aws_lambda_function" "extract_lambda_handler" {
 
 # creating the lambda layer
 resource "aws_lambda_layer_version" "lambda_layer" {
-  layer_name          = "extact_layer.zip"
+  layer_name          = "extact_layer"
   filename = data.archive_file.lambda_layer.output_path
   source_code_hash    = data.archive_file.lambda_layer.output_base64sha256
-  compatible_runtimes = ["python3.10"]
+  compatible_runtimes = [var.python_runtime]
 }
