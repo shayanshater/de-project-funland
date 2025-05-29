@@ -5,6 +5,12 @@ data "archive_file" "lambda" {
   output_path      = "${path.module}/../deployment/handlers/extract.zip"
 }
 
+# ziping the packeges to lambda layer
+data "archive_file" "lambda_layer" {
+  type             = "zip"
+  source_dir       = "${path.module}/../dependencies/packages"
+  output_path      = "${path.module}/../dependencies/layers/extract_layer.zip"
+}
 
 #we are creating the Lambda
 resource "aws_lambda_function" "extract_lambda_handler" {
@@ -26,9 +32,10 @@ resource "aws_lambda_function" "extract_lambda_handler" {
   }
 }
 
+# creating the lambda layer
 resource "aws_lambda_layer_version" "lambda_layer" {
-  filename   = "layer.extract.requirements.zip"
-  layer_name = "d"
-
-  compatible_runtimes = ["nodejs20.x"]
+  layer_name          = "extact_layer.zip"
+  filename = data.archive_file.lambda_layer.output_path
+  source_code_hash    = data.archive_file.lambda_layer.output_base64sha256
+  compatible_runtimes = ["python3.10"]
 }
