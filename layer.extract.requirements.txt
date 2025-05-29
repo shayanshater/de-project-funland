@@ -1,0 +1,4 @@
+python-dotenv # ==1.0.0
+pg8000 # ==1.30.3
+boto3
+

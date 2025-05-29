@@ -27,8 +27,8 @@ resource "aws_lambda_function" "extract_lambda_handler" {
 }
 
 resource "aws_lambda_layer_version" "lambda_layer" {
-  filename   = "lambda_layer_payload.zip"
-  layer_name = "lambda_layer_name"
+  filename   = "layer.extract.requirements.zip"
+  layer_name = "d"
 
   compatible_runtimes = ["nodejs20.x"]
 }
