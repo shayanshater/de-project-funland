@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 from pg8000.native import Connection, identifier, literal, DatabaseError
 from pprint import pprint
 import csv
+import boto3
+from botocore.exceptions import ClientError
+from datetime import datetime, timezone
 
 
 load_dotenv()
@@ -16,6 +19,12 @@ def connect_to_db():
         port=int(os.getenv("totesys_port"))
     )
 
+tables_to_import = ["counterparty", "currency", "department", "design", "staff",
+                    "sales_order", "address", "payment", "purchase_order",
+                    "payment_type", "transaction"]
+
+# for table in tables_to_import:
+#     last_updated = table[last_updated]
 
 
 def get_data_from_db(tables_to_import):
@@ -27,44 +36,54 @@ def get_data_from_db(tables_to_import):
     name
       
     Returns:
-    Python dictionary
+    data from all tables as a Python dictionary
     
     """
-    
     conn = connect_to_db()
     tables_data =  {}
+    # last_ingestion = #refer to logs from lambda runs for timestamp
+    #Check if it’s the first time we’re running
+
+    if os.path.exists("last_ingested.txt"):
+        with open("last_ingested.txt", "r") as f:
+            last_ingested = f.read().strip()
+    else:
+        last_ingested = None
     
-    
+    this_run_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")            
+    #We save the current time as a string.
+    #We’ll use this time at the end to say: "This is the last time I checked."
+
     try:
         for table in tables_to_import:
-            table_data = conn.run(
-                f"SELECT * FROM {identifier(table)} LIMIT 2;"  #WHERE {last_check} < last_updated
-            )
+            if last_ingested is None:  
+                table_data = conn.run(
+                    f"SELECT * FROM {identifier(table)} LIMIT 3;")
+            else:
+                table_data = conn.run(
+                    f"SELECT * FROM {identifier(table)} WHERE last_updated > {literal(last_ingested)}")                
             column_names = [column['name'] for column in conn.columns]
             formatted_tables_data = {
                 'tables' : [dict(zip(column_names, t)) for t in table_data]
                 }
             tables_data[table] = formatted_tables_data["tables"]
+            #This updates our file so that next time we run the code, we know where we left off.
+            with open("last_ingested.txt", "w") as f:
+                f.write(this_run_time)
         return tables_data
     except DatabaseError as err:
         return "database error found"
     finally:  
         conn.close()
 
-    
-
-    
-
+get_data_from_db(tables_to_import)
 
 def convert_data_to_csv_files(tables_data):
     """
     This function will take a Python dictionary of data in multiple tables 
     (including tablename, column names within each table and the values), 
     and convert it to CSV file that will be stored on the landing bucket
-    with the specified file format.
-    
-    file format year/month/day/hour/minute/seconds.json
-    
+    with the specified file format.    
     
     Args:
     boto3 s3 client
@@ -93,11 +112,24 @@ def convert_data_to_csv_files(tables_data):
             writer.writeheader()
             for row in tables_data[table]:
                 writer.writerow(row)
-                
-                
 
-tables_to_import = ["ounterparty", "currency", "department", "design", "staff", "sales_order",
-                    "address", "payment", "purchase_order", "payment_type", "transaction"]
-#dic = get_data_from_db()
-#convert_data_to_csv_files(dic)
+
+def upload_csv_to_ingestion_bucket(file_name, bucket_name, s3_client, object_name=None):
+    if object_name is None:
+        object_name = os.path.basename(file_name)
+    s3_client = boto3.client("s3")
+    try:
+        s3_client.upload_file(file_name,bucket_name,object_name)
+    except ClientError as ce:
+        logging.error(ce)
+        print(f"Failed to upload '{file_name}' to bucket '{bucket_name}'.")
+        return False
+    print(f"Succesfully uploaded '{file_name}' to bucket '{bucket_name}'.")
+    return True
+
+upload_csv_to_ingestion_bucket("data/extract/address.csv",
+                               "funland-ingestion-bucket-20250529092926665800000002",
+                               "s3_client")
+
+
 

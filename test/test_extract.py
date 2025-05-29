@@ -35,12 +35,12 @@ class TestGetDataFromDB:
             assert expect == [[True]]
 
 
-    def test_get_data_from_db_function_returns_dictionary_with_correct_tables_and_row_data(self, tables_to_import):
+    def test_get_data_from_db_returns_dictionary_with_correct_tables_and_row_data(self, tables_to_import):
 
         tables_data = get_data_from_db(tables_to_import)
 
         
-        assert isinstance(tables_data,dict)
+        assert isinstance(tables_data, dict)
         assert list(tables_data.keys()) == ["counterparty", "currency", 
                     "department", "design", "staff", "sales_order",
                     "address", "payment", "purchase_order", 
@@ -52,8 +52,14 @@ class TestGetDataFromDB:
                 
                 
     def test_get_data_from_db_gives_error(self, tables_to_import):
-        tables_to_import[0] = 'ounterpart'
+        tables_to_import[0] = 'ounterparty'
         assert get_data_from_db(tables_to_import) == "database error found"
+    
+
+class TestUploadToS3():
+    def test_upload_csv_to_ingestion_bucket_uploads_to_the_bucket():
+        
+
             
 
         
