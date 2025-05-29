@@ -42,6 +42,7 @@ def get_data_from_db(tables_to_import):
     conn = connect_to_db()
     tables_data =  {}
     # last_ingestion = #refer to logs from lambda runs for timestamp
+   
     #Check if it’s the first time we’re running
 
     if os.path.exists("last_ingested.txt"):
@@ -49,16 +50,18 @@ def get_data_from_db(tables_to_import):
             last_ingested = f.read().strip()
     else:
         last_ingested = None
-    
-    this_run_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")            
+
+
     #We save the current time as a string.
     #We’ll use this time at the end to say: "This is the last time I checked."
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")            
+    
 
     try:
         for table in tables_to_import:
             if last_ingested is None:  
                 table_data = conn.run(
-                    f"SELECT * FROM {identifier(table)} LIMIT 3;")
+                    f"SELECT * FROM {identifier(table)};")
             else:
                 table_data = conn.run(
                     f"SELECT * FROM {identifier(table)} WHERE last_updated > {literal(last_ingested)}")                
@@ -67,16 +70,22 @@ def get_data_from_db(tables_to_import):
                 'tables' : [dict(zip(column_names, t)) for t in table_data]
                 }
             tables_data[table] = formatted_tables_data["tables"]
-            #This updates our file so that next time we run the code, we know where we left off.
-            with open("last_ingested.txt", "w") as f:
-                f.write(this_run_time)
+        
+        #This updates our file so that next time we run the code, we know where we left off.
+        with open("last_ingested.txt", "w") as f:
+                f.write(timestamp)
+    
+        
         return tables_data
+    
     except DatabaseError as err:
         return "database error found"
+
     finally:  
         conn.close()
+    
+tables_data=get_data_from_db(tables_to_import)
 
-get_data_from_db(tables_to_import)
 
 def convert_data_to_csv_files(tables_data):
     """
@@ -92,26 +101,24 @@ def convert_data_to_csv_files(tables_data):
     returns:
     string stating what's been done: "file {filename} has been uploaded to landing bucket"
     """
-    #tables_data = get_data_from_db()
-    # header = ['list of column names']
-    # writer = csv.DictWriter(file, fieldnames=header)
-    # writer.writeheader()
-    # """
-    # iterate through each k:v of the tables_data dict, where k is a table from totesys db.
-    
-    # """
-    # for values in tables_data["outer key"]["inner keys"]:
-    #     writer.writerow(values)
 
-
+    print(tables_data)
 
     for table in tables_data.keys():
+        if not tables_data[table]:
+            print(f"No new data for table '{table}', skipping.")
+            continue
+    
         header = tables_data[table][0].keys()
-        with open(f"data/extract/{table}.csv",'w') as csv_file:
+        with open(f"data/extract/{table}_{timestamp}.csv",'w') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=header)
             writer.writeheader()
             for row in tables_data[table]:
                 writer.writerow(row)
+
+convert_data_to_csv_files(tables_data)
+
+
 
 
 def upload_csv_to_ingestion_bucket(file_name, bucket_name, s3_client, object_name=None):
