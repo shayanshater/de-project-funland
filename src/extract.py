@@ -7,10 +7,9 @@ import boto3
 from botocore.exceptions import ClientError
 from datetime import datetime, timezone
 import logging
+import json
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
 
 
 load_dotenv()
@@ -58,8 +57,6 @@ def get_data_from_db(tables_to_import):
             last_ingested = f.read().strip()
     else:
         last_ingested = None
-
-
     
     #We’ll use this time at the end to say: "This is the last time I checked."
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")            
@@ -128,14 +125,40 @@ def convert_data_to_csv_files(tables_data):
 convert_data_to_csv_files(tables_data)
 
 
+# def convert_data_to_json(tables_data): 
+# """
+# TODO: check if we want to upload files as a JSON or csv. 
+# """
+#     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") 
+#     for table in tables_data.keys():
+#         if not tables_data[table]:
+#             print(f"No new data for table '{table}', skipping.")
+#             continue
+
+#     json_to_upload = bytes(json.dumps(get_data_from_db(tables_to_import)).encode('UTF-8'))
+    
+#     s3_client = boto3.client("s3")                       
+#     bucket = os.getenv("s3_ingestion_bucket")
+
+#     s3_client.put_object(Bucket=bucket, Key='extract_data.json' , Body=json_to_upload)
+    
 
 
 def upload_csv_to_ingestion_bucket(file_name, bucket_name, s3_client, object_name=None):
+    """
+    Uploads .csv files to s3 bucket 
+
+    args: 
+    file_name - from convert_data_to_csv_files - {table}_{timestamp}.csv
+    bucket_name - 
+
+
+    """
     if object_name is None:
         object_name = os.path.basename(file_name)
     s3_client = boto3.client("s3")
     try:
-        s3_client.upload_file(file_name,bucket_name,object_name)
+        s3_client.put_object(file_name,bucket_name,object_name)
     except ClientError as ce:
         logging.error(ce)
         print(f"Failed to upload '{file_name}' to bucket '{bucket_name}'.")
@@ -148,8 +171,20 @@ def upload_csv_to_ingestion_bucket(file_name, bucket_name, s3_client, object_nam
 #                                "s3_client")
 
 
-def extract_lambda_handler(context):
-    
+def extract_lambda_handler(event, context):
+    """
+    lambda function runs previous functions to get the data from the DB, convert to csv and upload to the S3 bucket. 
+
+    args: 
+    event - will be invoked every 15 mins (eventbridge/stepfunction)
+
+    returns: 
+    currently returns a dict listing the response code, and list of csv files uploaded. 
+
+    TODO: check this return output (will be the event for next lambda function) 
+    TODO: event for next lambda function will be triggered by the object being added to the s3. 
+
+    """
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") 
 
 
@@ -163,15 +198,22 @@ def extract_lambda_handler(context):
     
     s3_client=boto3.client("s3")
 
+    updated_tables = []
+
+    for table in tables_data.keys():
+        if tables_data[table]: 
+            updated_tables.append(table)
+
     for table in tables_data:
         if not tables_data[table]:
             continue
         file_name=f"data/extract/{table}_{timestamp}.csv"
+      #  updated_tables.append(file_name)
 
     upload_csv_to_ingestion_bucket(file_name,s3_bucket,s3_client,object_name=None)
 
     return {
         'statusCode': 200,
-        'body': 'Data extracted and uploaded'
+        'body': {'csv_files_uploaded': [updated_tables]}
     }
 
