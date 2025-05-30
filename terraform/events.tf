@@ -6,12 +6,12 @@ resource "aws_cloudwatch_event_rule" "schedule" {
   schedule_expression = "rate(15 minutes)"
 }
 
-# #connect EventBridge to the Lambda
-# resource "aws_cloudwatch_event_target" "yada" {
-#   target_id = "LambdaTarget"
-#   rule      = aws_cloudwatch_event_rule.schedule.name
-#   arn       = aws_lambda_function.extract_lambda_handler.arn
-# }
+#connect EventBridge to the Lambda
+resource "aws_cloudwatch_event_target" "yada" {
+  target_id = "LambdaTarget"
+  rule      = aws_cloudwatch_event_rule.schedule.name
+  arn       = aws_lambda_function.extract_lambda_handler.arn
+}
 
 #allow EventBridge to call lambda
 resource "aws_lambda_permission" "allow_cloudwatch" {

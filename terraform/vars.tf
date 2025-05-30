@@ -12,7 +12,7 @@ variable "processed_bucket_prefix" {
 
 variable "lambda_ingestion" {
   type    = string
-  default = "ingestion"
+  default = "extraction-lambda"
 }
 
 variable "python_runtime" {
