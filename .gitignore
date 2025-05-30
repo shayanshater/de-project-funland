@@ -2,6 +2,5 @@
 venv/
 **/.terraform*
 /dependencies/layers/*
-! /dependencies/layers/struct.txt
 /dependencies/packages/*
 
