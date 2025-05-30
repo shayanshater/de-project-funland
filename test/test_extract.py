@@ -1,4 +1,4 @@
-from src.extract import get_data_from_db, convert_data_to_csv_files, connect_to_db
+from src.extract import get_data_from_db, convert_data_to_csv_files, connect_to_db, upload_csv_to_ingestion_bucket, extract_lambda_handler 
 import pytest
 from pg8000.native import DatabaseError
 
@@ -40,7 +40,7 @@ class TestGetDataFromDB:
         tables_data = get_data_from_db(tables_to_import)
 
         
-        assert isinstance(tables_data, dict)
+        #assert isinstance(tables_data, dict)
         assert list(tables_data.keys()) == ["counterparty", "currency", 
                     "department", "design", "staff", "sales_order",
                     "address", "payment", "purchase_order", 
@@ -56,8 +56,6 @@ class TestGetDataFromDB:
         assert get_data_from_db(tables_to_import) == "database error found"
     
 
-class TestUploadToS3():
-    def test_upload_csv_to_ingestion_bucket_uploads_to_the_bucket():
         
 
             

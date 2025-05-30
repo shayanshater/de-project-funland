@@ -6,6 +6,11 @@ import csv
 import boto3
 from botocore.exceptions import ClientError
 from datetime import datetime, timezone
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
 
 
 load_dotenv()
@@ -19,10 +24,13 @@ def connect_to_db():
         port=int(os.getenv("totesys_port"))
     )
 
+
+
 tables_to_import = ["counterparty", "currency", "department", "design", "staff",
                     "sales_order", "address", "payment", "purchase_order",
                     "payment_type", "transaction"]
 
+    
 # for table in tables_to_import:
 #     last_updated = table[last_updated]
 
@@ -52,7 +60,7 @@ def get_data_from_db(tables_to_import):
         last_ingested = None
 
 
-    #We save the current time as a string.
+    
     #We’ll use this time at the end to say: "This is the last time I checked."
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")            
     
@@ -80,7 +88,6 @@ def get_data_from_db(tables_to_import):
     
     except DatabaseError as err:
         return "database error found"
-
     finally:  
         conn.close()
     
@@ -103,7 +110,9 @@ def convert_data_to_csv_files(tables_data):
     """
 
     print(tables_data)
-
+    
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") 
+    
     for table in tables_data.keys():
         if not tables_data[table]:
             print(f"No new data for table '{table}', skipping.")
@@ -134,9 +143,35 @@ def upload_csv_to_ingestion_bucket(file_name, bucket_name, s3_client, object_nam
     print(f"Succesfully uploaded '{file_name}' to bucket '{bucket_name}'.")
     return True
 
-upload_csv_to_ingestion_bucket("data/extract/address.csv",
-                               "funland-ingestion-bucket-20250529092926665800000002",
-                               "s3_client")
+# upload_csv_to_ingestion_bucket("data/extract/address.csv",
+#                                "funland-ingestion-bucket-20250529092926665800000002",
+#                                "s3_client")
 
 
+def extract_lambda_handler(context):
+    
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") 
+
+
+     #calling the first function to get the data
+    tables_data=get_data_from_db(tables_to_import)
+    
+    #calling the second function to convert the data we got from the first function as csv file
+    convert_data_to_csv_files(tables_data)
+
+    s3_bucket=os.getenv("s3_ingestion_bucket")
+    
+    s3_client=boto3.client("s3")
+
+    for table in tables_data:
+        if not tables_data[table]:
+            continue
+        file_name=f"data/extract/{table}_{timestamp}.csv"
+
+    upload_csv_to_ingestion_bucket(file_name,s3_bucket,s3_client,object_name=None)
+
+    return {
+        'statusCode': 200,
+        'body': 'Data extracted and uploaded'
+    }
 
