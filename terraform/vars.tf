@@ -20,3 +20,8 @@ variable "python_runtime" {
   default = "python3.13"
 }
 
+variable "step_function" {
+  type = string
+  default = "funland-etl"
+}
+

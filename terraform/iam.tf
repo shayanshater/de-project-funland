@@ -26,8 +26,6 @@ resource "aws_iam_role" "lambda_role" {
 
 # Define
 
-
-
 data "aws_iam_policy_document" "s3_data_policy_doc" {
   statement {
     #TODO: this statement should give permission to put objects in the data bucket
@@ -87,9 +85,55 @@ resource "aws_iam_role_policy_attachment" "lambda_cw_policy_attachment" {
   policy_arn = aws_iam_policy.cw_policy.arn
 }
 
+# ------------------------------
+# IAM Policy for Step Function to invoke Lambda
+# ------------------------------
 
+# Data for role
+data "aws_iam_policy_document" "sf_role_document" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["states.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
 
+# Create the role
+resource "aws_iam_role" "step_function_role" {
+  name_prefix        = "role-${var.step_function}-"
+  assume_role_policy = data.aws_iam_policy_document.sf_role_document.json
+}
 
+# Define policy that allows the Step Function to invoke any lambdas
+
+data "aws_iam_policy_document" "step_functions_document" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "lambda:InvokeFunction"
+    ]
+    resources = [aws_lambda_function.extract_lambda_handler.arn,
+                aws_lambda_function.transform_lambda_handler.arn,
+                aws_lambda_function.load_lambda_handler.arn]    
+  }
+}
+
+#Create IAM policy for Step Function
+
+resource "aws_iam_policy" "step_functions_policy" {
+  name = "sf-${var.step_function}"
+  policy = data.aws_iam_policy_document.step_functions_document.json
+}
+
+# Attach
+resource "aws_iam_role_policy_attachment" "lambda_sf_policy_attachment" {
+  #TODO: attach the cw policy to the lambda role
+  role       = aws_iam_role.step_function_role.name
+  policy_arn = aws_iam_policy.step_functions_policy.arn
+}
 
 
  
