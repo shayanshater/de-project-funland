@@ -3,6 +3,7 @@ venv/
 **/.terraform*
 /dependencies/layers/*
 /dependencies/packages/*
+**/__pycache__/
 
 !/dependencies/layers/.gitkeep
 !/dependencies/packages/.gitkeep

@@ -1,3 +1,2 @@
 def lambda_handler(event, context):
-    return 'extracted'
-    
+    return 'transformed'
