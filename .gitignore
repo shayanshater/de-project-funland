@@ -4,3 +4,8 @@ venv/
 /dependencies/layers/*
 /dependencies/packages/*
 
+!/dependencies/layers/.gitkeep
+!/dependencies/packages/.gitkeep
+/deployment/handlers/*
+!/deployment/handlers/.gitkeep
+
