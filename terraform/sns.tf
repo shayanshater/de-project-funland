@@ -1,7 +1,3 @@
-provider "aws" {
-  region = "er-west-2"
-}
-
 resource "aws_sns_topic" "user_updates" {
   name = "test-2"
 }
