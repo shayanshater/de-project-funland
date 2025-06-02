@@ -30,9 +30,9 @@ jobs:
         make run-checks
     - name: Archive coverage report
       uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.txt
+      with:
+        name: coverage-report
+        path: coverage.txt
 
   deploy-dev:
     # only runs if push or pull request happens to main branch
