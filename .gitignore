@@ -1,13 +1,16 @@
 .env
-
 **/.vscode/
 **/*egg*
 **/*.pyc
-**/.vscode
 **/*_cache
-**/*__pycache__*
 *coverage*
-venv/
 
-dependencies
-terraform
+venv/
+**/.terraform*
+/dependencies/layers/*
+/dependencies/packages/*
+**/__pycache__/
+!/dependencies/layers/.gitkeep
+!/dependencies/packages/.gitkeep
+/deployment/handlers/*
+!/deployment/handlers/.gitkeep

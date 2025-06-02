@@ -1,0 +1,37 @@
+
+variable "ingestion_bucket_prefix" {
+  type    = string
+  default = "funland-ingestion-bucket-"
+}
+
+
+variable "processed_bucket_prefix" {
+  type    = string
+  default = "funland-processed-bucket-"
+}
+
+variable "lambda_extract" {
+  type    = string
+  default = "extract-lambda"
+}
+
+variable "lambda_transform" {
+  type    = string
+  default = "transform-lambda"
+}
+
+variable "lambda_load" {
+  type    = string
+  default = "load-lambda"
+}
+
+variable "python_runtime" {
+  type    = string
+  default = "python3.13"
+}
+
+variable "step_function" {
+  type = string
+  default = "funland-etl"
+}
+
