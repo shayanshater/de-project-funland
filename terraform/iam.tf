@@ -17,7 +17,7 @@
 
 # Create the role
 resource "aws_iam_role" "lambda_role" {
-  name_prefix        = "role-${var.lambda_ingestion}-"
+  name_prefix        = "lambda-role-"
   assume_role_policy = data.aws_iam_policy_document.trust_policy.json
 }
 
@@ -41,7 +41,7 @@ data "aws_iam_policy_document" "s3_data_policy_doc" {
 
 # Create
 resource "aws_iam_policy" "s3_write_policy" {
-  name_prefix = "s3-policy-${var.lambda_ingestion}-write"
+  name_prefix = "s3-policy-lambda-write"
   policy      = data.aws_iam_policy_document.s3_data_policy_doc.json     #TODO use the policy document defined above
 }
 
@@ -74,7 +74,7 @@ data "aws_iam_policy_document" "cw_document" {
 # Create
 resource "aws_iam_policy" "cw_policy" {
   #TODO: use the policy document defined above
-  name   = "cw-${var.lambda_ingestion}"
+  name   = "cw-lambda"
   policy = data.aws_iam_policy_document.cw_document.json
 }
 

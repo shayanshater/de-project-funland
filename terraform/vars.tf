@@ -10,9 +10,19 @@ variable "processed_bucket_prefix" {
   default = "funland-processed-bucket-"
 }
 
-variable "lambda_ingestion" {
+variable "lambda_extract" {
   type    = string
-  default = "extraction-lambda"
+  default = "extract-lambda"
+}
+
+variable "lambda_transform" {
+  type    = string
+  default = "transform-lambda"
+}
+
+variable "lambda_load" {
+  type    = string
+  default = "load-lambda"
 }
 
 variable "python_runtime" {

@@ -8,22 +8,22 @@ resource "aws_sfn_state_machine" "sfn_state_machine" {
   "States": {
     "Extract": {
       "Type": "Task",
-      "Resource": "arn:aws:states:eu-west-2:${data.aws_caller_identity.current.account_id}:function:${var.lambda_ingestion}",
+      "Resource": "${aws_lambda_function.extract_lambda_handler.arn}",
       "Next": "Transform",
       "ResultPath": "$.myresult"
     },
     "Transform": {
       "Type": "Task",
-      "Resource": "arn:aws:states:eu-west-2:${data.aws_caller_identity.current.account_id}:function:${var.lambda_ingestion}",
+      "Resource": "${aws_lambda_function.transform_lambda_handler.arn}",
       "Next": "Load",
       "ResultPath": "$.myresult"
     },
     "Load": {
       "Type": "Task",
-      "Resource": "arn:aws:states:eu-west-2:${data.aws_caller_identity.current.account_id}:function:${var.lambda_ingestion}",
+      "Resource": "${aws_lambda_function.load_lambda_handler.arn}",
       "ResultPath": "$.myresult",
-    },
       "End": true
+    }
     }
   }
     EOF
