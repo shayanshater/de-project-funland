@@ -1,3 +1,0 @@
-purchase_order_id,created_at,last_updated,staff_id,counterparty_id,item_code,item_quantity,item_unit_price,currency_id,agreed_delivery_date,agreed_payment_date,agreed_delivery_location_id
-1,2022-11-03 14:20:52.187000,2022-11-03 14:20:52.187000,12,11,ZDOI5EA,371,361.39,2,2022-11-09,2022-11-07,6
-2,2022-11-03 14:20:52.186000,2022-11-03 14:20:52.186000,20,17,QLZLEXR,286,199.04,2,2022-11-04,2022-11-07,8
