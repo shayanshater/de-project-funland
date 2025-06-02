@@ -5,11 +5,11 @@ on:
     branches:
       - main
   pull-request:
-    branches:
-      - main
+    # branches:
+    #   - main
 
 jobs:
-  build: 
+  run-tests: 
     runs-on: ubuntu-latest
 
     steps:
@@ -33,4 +33,33 @@ jobs:
         with:
           name: coverage-report
           path: coverage.txt
+
+  deploy-dev:
+    # only runs if push or pull request happens to main branch
+    if: github.ref == 'refs/heads/main'
+    name: deploy-dev
+    environment: dev
+    needs: run-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4.1.0
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: S{{ secrets.AWS_REGION }}
+      - name: Install Terraform
+        uses: hasicorp/setup-terraform@v3
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+
     
