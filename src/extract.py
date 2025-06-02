@@ -131,47 +131,13 @@ def convert_to_json_and_upload_to_s3():
             logger.error(e)
             print (f"Could not upload to S3")
             return {
-                "statusCode": 404, #find the right code
+                "statusCode": 500, #find the right code
                 "body": json.dumps(f"Error occured: {str(e)}")
             }
             
-        # header = tables_data[table][0].keys()
-        # with open(f"data/extract/{table}_{timestamp}.csv",'w') as csv_file:
-        #     writer = csv.DictWriter(csv_file, fieldnames=header)
-        #     writer.writeheader()
-        #     for row in tables_data[table]:
-        #         writer.writerow(row)
-
-
-# def upload_file_to_ingestion_bucket(file_name, bucket_name, s3_client, object_name=None):
-#     """
-#     Uploads files to s3 bucket 
-
-#     args: 
-#     file_name - from convert_data_to_csv_files - {table}_{timestamp}.csv
-#     bucket_name - 
-
-#     """
-#     if object_name is None:
-#         object_name = os.path.basename(file_name)
-#     s3_client = boto3.client("s3")
-#     try:
-#         s3_client.put_object(file_name,bucket_name,object_name)
-#     except ClientError as ce:
-#         logger.error(ce)
-#         print(f"Failed to upload '{file_name}' to bucket '{bucket_name}'.")
-#         return False
-#     print(f"Succesfully uploaded '{file_name}' to bucket '{bucket_name}'.")
-#     return True
-
-# upload_csv_to_ingestion_bucket("data/extract/address.csv",
-#                                "funland-ingestion-bucket-20250529092926665800000002",
-#                                "s3_client")
-
-
 def extract_lambda_handler(event, context):
     """
-    lambda function runs previous functions to get the data from the DB, convert to csv and upload to the S3 bucket. 
+    lambda function runs previous functions to get the data from the DB, convert to json and upload to the S3 bucket. 
 
     args: 
     event - will be invoked every 15 mins (eventbridge/stepfunction)
