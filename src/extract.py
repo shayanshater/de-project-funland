@@ -106,7 +106,13 @@ def convert_data_to_csv_files(tables_data):
     string stating what's been done: "file {filename} has been uploaded to landing bucket"
     """
 
-    print(tables_data)
+    
+    # for table in tables_data:
+    #     client.put_object(
+    #         Body = json.dumps(tables_data[table])
+    #         Key = f"{table}/{timestamp}"
+    #         Bucket = # how to get bucket name
+    #     )
     
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") 
     
