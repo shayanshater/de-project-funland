@@ -30,6 +30,40 @@ tables_to_import = ["counterparty", "currency", "department", "design", "staff",
                     "sales_order", "address", "payment", "purchase_order",
                     "payment_type", "transaction"]
 
+def get_last_ingested_from_ssm(parameter_name):
+    # Initialize the SSM client
+    ssm_client = boto3.client('ssm')
+    
+    # Define the parameter name
+    parameter_name = 'lambda_timestamp'
+    
+    # Retrieve the parameter value
+    response = ssm_client.get_parameter(Name=parameter_name)
+    timestamp = response['Parameter']['Value']
+    
+    # Use the timestamp as needed
+    print(f"Timestamp retrieved: {timestamp}")
+    
+    return {
+        'statusCode': 200,
+        'body': timestamp
+    }
+
+def get_updated_ingested_from_ssm(parameter_name, value):
+    ssm_client = boto3.client('ssm')
+    parameter_name = 'lambda_timestamp'
+    
+    try:
+        ssm_client.put_parameter(
+            Name=parameter_name, 
+            Value=value, 
+            Type="String", 
+            Overwrite=True
+        )
+    except ClientError as essm:
+        logger.error(f"SSM error: {str(essm)}")
+        return { 'statusCode': 404, 'Body' : {str(essm)}}
+
 
 # for table in tables_to_import:
 #     last_updated = table[last_updated]
@@ -52,15 +86,16 @@ def get_data_from_db(tables_to_import):
    
     #Check if it’s the first time we’re running
 
-    if os.path.exists("last_ingested.txt"): # check how to amend this to integrate AWS Parameter store for last checked time!!!
-        with open("last_ingested.txt", "r") as f:
-            last_ingested = f.read().strip()
-    else:
-        last_ingested = None
+    # if os.path.exists("last_ingested.txt"): # check how to amend this to integrate AWS Parameter store for last checked time!!!
+    #     with open("last_ingested.txt", "r") as f:
+    #         last_ingested = f.read().strip()
+    # else:
+    #     last_ingested = None
     
     #We’ll use this time at the end to say: "This is the last time I checked."
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")            
-    
+    last_ingested = get_last_ingested_from_ssm(parameter_name)
+
     try:
         for table in tables_to_import:
             if last_ingested is None:  # meaning if this is the first ever run
