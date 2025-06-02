@@ -135,5 +135,45 @@ resource "aws_iam_role_policy_attachment" "lambda_sf_policy_attachment" {
   policy_arn = aws_iam_policy.step_functions_policy.arn
 }
 
-
+# ------------------------------
+# IAM Policy for Scheduler to invoke step function
+# ------------------------------
  
+# Data for role
+data "aws_iam_policy_document" "scheduler_role_document" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["scheduler.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+# Create the role
+resource "aws_iam_role" "scheduler_role" {
+  name        = "scheduler-role"
+  assume_role_policy = data.aws_iam_policy_document.scheduler_role_document.json
+}
+
+#defining the policy document 
+data "aws_iam_policy_document" "scheduler_policy_document" {
+  statement {
+    effect = "Allow"
+    actions = ["states:StartExecution"]
+    resources = [aws_sfn_state_machine.sfn_state_machine.arn]
+  }
+}
+
+#Create IAM policy for scheduler 
+resource "aws_iam_policy" "scheduler_policy" {
+  name = "scheduler-policy"
+  policy = data.aws_iam_policy_document.scheduler_policy_document.json
+}
+
+# Attach
+resource "aws_iam_role_policy_attachment" "scheduler_policy_attachment" {
+  role       = aws_iam_role.scheduler_role.name
+  policy_arn = aws_iam_policy.scheduler_policy.arn
+}

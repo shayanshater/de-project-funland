@@ -16,7 +16,7 @@ data "archive_file" "lambda_layer" {
 # creating the lambda layer
 resource "aws_lambda_layer_version" "lambda_layer" {
   # provisioner "local-exec" {
-  #   command = "pip install -r requirements.txt -t dependencies/packages/"
+  #   command = "pip install -r ../lambda_packages.txt -t dependencies/packages/"
   #   }
 
   layer_name          = "etl_layer"
@@ -41,7 +41,7 @@ resource "aws_lambda_function" "extract_lambda_handler" {
   environment {
     variables = {
       s3_bucket = aws_s3_bucket.ingestion_bucket.bucket
-    #add the .env? 
+    #TODO: add the .env? 
     }
   }
 }
