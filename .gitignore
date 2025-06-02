@@ -1,4 +1,10 @@
 .env
+**/.vscode/
+**/*egg*
+**/*.pyc
+**/*_cache
+*coverage*
+
 venv/
 **/.terraform*
 /dependencies/layers/*

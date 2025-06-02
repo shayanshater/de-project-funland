@@ -4,3 +4,10 @@ pytest # ==7.4.3
 pytest-testdox
 boto3
 moto
+
+pandas
+pytest-cov
+flake8
+black
+bandit
+pip-audit
