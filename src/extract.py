@@ -31,6 +31,8 @@ tables_to_import = ["counterparty", "currency", "department", "design", "staff",
                     "payment_type", "transaction"]
 
 
+## AWS Param Store
+
 def write_last_ingested_to_ssm():
     ssm_client = boto3.client('ssm')
     param_name = 'lambda_timestamp'
@@ -204,41 +206,19 @@ def extract_lambda_handler(event, context):
 
     updated_tables = []
 
-    for table in tables_data.keys():
-        if tables_data[table]: 
-            updated_tables.append(table)
+    # for table in tables_data.keys():
+    #     if tables_data[table]: 
+    #         updated_tables.append(table)
 
-    for table in tables_data:
-        if not tables_data[table]:
-            continue
-        file_name=f"data/extract/{table}_{timestamp}.csv"
+    # for table in tables_data:
+    #     if not tables_data[table]:
+    #         continue
+    #     file_name=f"data/extract/{table}_{timestamp}.csv"
       #  updated_tables.append(file_name)
 
-    upload_csv_to_ingestion_bucket(file_name,s3_bucket,s3_client,object_name=None)
+    # upload_csv_to_ingestion_bucket(file_name,s3_bucket,s3_client,object_name=None)
 
     return {
         'statusCode': 200,
         'body': {'csv_files_uploaded': [updated_tables]}
-    }
-
-
-### AWS Parameter Store
-
-def lambda_handler(event, context):
-    # Initialize the SSM client
-    ssm_client = boto3.client('ssm')
-    
-    # Define the parameter name
-    param_name = 'timestamp'
-    
-    # Retrieve the parameter value
-    response = ssm_client.get_parameter(Name=parameter_name)
-    timestamp = response['Parameter']['Value']
-    
-    # Use the timestamp as needed
-    print(f"Timestamp retrieved: {timestamp}")
-    
-    return {
-        'statusCode': 200,
-        'body': timestamp
     }
