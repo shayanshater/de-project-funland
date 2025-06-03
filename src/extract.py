@@ -30,39 +30,44 @@ tables_to_import = ["counterparty", "currency", "department", "design", "staff",
                     "sales_order", "address", "payment", "purchase_order",
                     "payment_type", "transaction"]
 
-def get_last_ingested_from_ssm(parameter_name):
-    # Initialize the SSM client
-    ssm_client = boto3.client('ssm')
-    
-    # Define the parameter name
-    parameter_name = 'lambda_timestamp'
-    
-    # Retrieve the parameter value
-    response = ssm_client.get_parameter(Name=parameter_name)
-    timestamp = response['Parameter']['Value']
-    
-    # Use the timestamp as needed
-    print(f"Timestamp retrieved: {timestamp}")
-    
-    return {
-        'statusCode': 200,
-        'body': timestamp
-    }
 
-def get_updated_ingested_from_ssm(parameter_name, value):
+def write_last_ingested_to_ssm():
     ssm_client = boto3.client('ssm')
-    parameter_name = 'lambda_timestamp'
-    
+    param_name = 'lambda_timestamp'
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+
     try:
         ssm_client.put_parameter(
-            Name=parameter_name, 
-            Value=value, 
-            Type="String", 
+            Name=param_name,
+            Description='Timestamp of each Lambda execution',
+            Value=timestamp,
+            Type="String",
             Overwrite=True
         )
     except ClientError as essm:
         logger.error(f"SSM error: {str(essm)}")
         return { 'statusCode': 404, 'Body' : {str(essm)}}
+
+def read_last_ingested_from_ssm(param_name):
+    # Initialize the SSM client
+    ssm_client = boto3.client('ssm')
+    
+    # Define the parameter name
+    param_name = 'lambda_timestamp'
+    
+    # Retrieve the parameter value
+    response = ssm_client.get_parameter(Name=param_name)
+    print(response)
+    read_last_ingested = response['Parameter']['Value']
+    
+    # Use the timestamp as needed
+    print(f"Timestamp retrieved: {read_last_ingested}")
+    return read_last_ingested
+    
+    # return {
+    #     'statusCode': 200,
+    #     'body': timestamp
+    # }
 
 
 # for table in tables_to_import:
@@ -94,7 +99,7 @@ def get_data_from_db(tables_to_import):
     
     #We’ll use this time at the end to say: "This is the last time I checked."
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")            
-    last_ingested = get_last_ingested_from_ssm(parameter_name)
+    last_ingested = get_last_ingested_from_ssm(param_name)
 
     try:
         for table in tables_to_import:
@@ -224,7 +229,7 @@ def lambda_handler(event, context):
     ssm_client = boto3.client('ssm')
     
     # Define the parameter name
-    parameter_name = '/path/to/timestamp'
+    param_name = 'timestamp'
     
     # Retrieve the parameter value
     response = ssm_client.get_parameter(Name=parameter_name)
