@@ -86,7 +86,40 @@ resource "aws_iam_role_policy_attachment" "lambda_cw_policy_attachment" {
 }
 
 # ------------------------------
-# IAM Policy for Step Function to invoke Lambda
+# Lambda needs permission to use SSM
+# ------------------------------
+
+# define policy
+data "aws_iam_policy_document" "ssm_lambda_policy_documentum"{
+  statement {
+    effect = "Allow"
+    actions = [
+        "ssm:PutParameter",
+        "ssm:DeleteParameter",
+        "ssm:GetParameterHistory",
+        "ssm:GetParameter",
+        ]
+    resources = ["arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/*"]
+
+  }
+}
+
+# create the policy
+resource "aws_iam_policy" "ssm_lambda_policy" {
+  name = "lambda-access-ssm-policy"
+  description = "IAM policy for lambda to access ssm parameters"
+  policy = data.aws_iam_policy_document.ssm_lambda_policy_documentum.json
+}
+
+# attach the policy to lambda role
+resource "aws_iam_role_policy_attachment" "ssm_lambda_policy_attachment" {
+  role = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.ssm_lambda_policy.arn
+}
+
+
+# ------------------------------
+# IAM role for Step Function to invoke Lambda
 # ------------------------------
 
 # Data for role
@@ -107,33 +140,74 @@ resource "aws_iam_role" "step_function_role" {
   assume_role_policy = data.aws_iam_policy_document.sf_role_document.json
 }
 
-# Define policy that allows the Step Function to invoke any lambdas
-
+# Define policy that allows the Step Function to invoke lambdas
 data "aws_iam_policy_document" "step_functions_document" {
   statement {
     effect = "Allow"
     actions = [
       "lambda:InvokeFunction"
     ]
-    resources = [aws_lambda_function.extract_lambda_handler.arn,
-                aws_lambda_function.transform_lambda_handler.arn,
-                aws_lambda_function.load_lambda_handler.arn]    
+    resources = [
+      aws_lambda_function.extract_lambda_handler.arn,
+      aws_lambda_function.transform_lambda_handler.arn,
+      aws_lambda_function.load_lambda_handler.arn
+      ]    
   }
 }
 
 #Create IAM policy for Step Function
-
 resource "aws_iam_policy" "step_functions_policy" {
   name = "sf-${var.step_function}"
   policy = data.aws_iam_policy_document.step_functions_document.json
 }
 
-# Attach
+# Attach the policy
 resource "aws_iam_role_policy_attachment" "lambda_sf_policy_attachment" {
   #TODO: attach the cw policy to the lambda role
   role       = aws_iam_role.step_function_role.name
   policy_arn = aws_iam_policy.step_functions_policy.arn
 }
 
+# ------------------------------
+# IAM role for Scheduler to invoke Step Functions
+# ------------------------------
 
- 
+# data for the role
+data "aws_iam_policy_document" "schedule_trust_policy" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["scheduler.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+# create the role
+resource "aws_iam_role" "schedule_role" {
+  name_prefix     = "role-${var.scheduler}-"
+  assume_role_policy = data.aws_iam_policy_document.schedule_trust_policy.json
+}
+
+# define a policy to allow scheduler to trigger the state machine | step function
+data "aws_iam_policy_document" "scheduler_involke_sf_document" {
+  statement {
+    effect = "Allow"
+    actions = ["states:StartExecution"]
+    resources = [aws_sfn_state_machine.sfn_state_machine.arn]
+  }
+}
+
+# Create the policy
+resource "aws_iam_policy" "scheduler_sf_policy" {
+  name = "scheduler-sf-execution-policy"
+  policy = data.aws_iam_policy_document.scheduler_involke_sf_document.json
+}
+
+# Attaching policy
+resource "aws_iam_role_policy_attachment" "scheduler_sf_policy_attachment" {
+  role = aws_iam_role.schedule_role.name
+  policy_arn = aws_iam_policy.scheduler_sf_policy.arn
+}
+

@@ -14,7 +14,7 @@
 #   role_arn  = aws_iam_role.step_function_role.arn
 # }
 
-resource "aws_scheduler_schedule" "example" {  ##TODO change the name
+resource "aws_scheduler_schedule" "step_function_scheduler" {  ##TODO change the name
   name       = "my-step-function-scheduler"
   #group_name = "step-function-group"
 
@@ -26,7 +26,8 @@ resource "aws_scheduler_schedule" "example" {  ##TODO change the name
 
   target {
     arn      = aws_sfn_state_machine.sfn_state_machine.arn
-    role_arn = aws_iam_role.step_function_role.arn
+    # role_arn = aws_iam_role.step_function_role.arn
+    role_arn = aws_iam_role.schedule_role.arn
   }
 }
 
