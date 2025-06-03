@@ -35,3 +35,7 @@ variable "step_function" {
   default = "funland-etl"
 }
 
+variable "notification_email" {
+  description = "Email address to receive Lambda failure notifications"
+  type        = string
+}

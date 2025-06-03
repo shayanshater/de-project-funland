@@ -1,13 +1,11 @@
-# resource "aws_sns_topic" "user_updates" {
-#   name = "test-2"
-# }
+# Create SNS Topic to notify about Lambda failures
+resource "aws_sns_topic" "alerts" {
+  name = "lambda-failure-topic"
+}
 
-# data "aws_sns_topic" "example" {
-#   name = "test-2"
-# }
-
-# resource "aws_sns_topic_subscription" "user_updates_sqs_target" {
-#   topic_arn = data.aws_sns_topic.example.arn
-#   protocol  = "email"
-#   endpoint  = "hari.sapkota1@gmail.com"
-# }
+# Subscribe an email address to the SNS topic
+resource "aws_sns_topic_subscription" "email" {
+  topic_arn = aws_sns_topic.alerts.arn
+  protocol  = "email"
+  endpoint  = var.notification_email
+}
