@@ -40,8 +40,8 @@ resource "aws_lambda_function" "extract_lambda_handler" {
   layers = [aws_lambda_layer_version.lambda_layer.arn]
   environment {
     variables = {
-      s3_bucket = aws_s3_bucket.ingestion_bucket.bucket
-    #TODO: add the .env? 
+
+      S3_INGESTION_BUCKET = aws_s3_bucket.ingestion_bucket.bucket
     }
   }
 }
@@ -59,8 +59,8 @@ resource "aws_lambda_function" "transform_lambda_handler" {
   layers = [aws_lambda_layer_version.lambda_layer.arn]
   environment {
     variables = {
-      s3_bucket = aws_s3_bucket.ingestion_bucket.bucket
-    #add the .env? 
+      S3_INGESTION_BUCKET = aws_s3_bucket.ingestion_bucket.bucket
+      S3_PROCESSED_BUCKET = aws_s3_bucket.processed_bucket.bucket
     }
   }
 }
@@ -76,10 +76,10 @@ resource "aws_lambda_function" "load_lambda_handler" {
 
   source_code_hash = data.archive_file.lambda.output_base64sha256
   layers = [aws_lambda_layer_version.lambda_layer.arn]
+
   environment {
     variables = {
-      s3_bucket = aws_s3_bucket.ingestion_bucket.bucket
-    #add the .env? 
+      S3_PROCESSED_BUCKET = aws_s3_bucket.processed_bucket.bucket
     }
   }
 }

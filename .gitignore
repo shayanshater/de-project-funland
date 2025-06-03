@@ -15,4 +15,5 @@ venv/
 /deployment/handlers/*
 !/deployment/handlers/.gitkeep
 
+terraform/terraform.tfvars
 
