@@ -6,12 +6,10 @@ from botocore.exceptions import ClientError
 from datetime import datetime, timezone
 import json
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # connect to totesys database using the funciton below
-
 
 def lambda_handler(event, context):
     
@@ -92,6 +90,7 @@ def get_last_checked():
     """
     
 def get_db_credentials():
+    pass
     """_summary_
     This functions should return a dictionary of all 
     the db credentials obtained from secret manager
@@ -100,11 +99,11 @@ def get_db_credentials():
     dictionary of credentials
     {"DB_USER":"totesys", DB_PASSWORD:".......}
     """
-    client.get_secret(name = 'db_password') # do this for all the credentials
+    sm_client = boto3.client("secretsmanager")
+    response = sm_client.get_secret(name = 'db_password') # do this for all the credentials
+    credentials = response["SecretString"]
     #format it in a nice way
     #return it    
-
-
 
 def create_db_connection(credentials):
     """ Summary:
@@ -143,6 +142,11 @@ def extract_new_rows(last_checked, db_connection):
     
     
     Returns:
+        - extract new data from updated tables using SQL query.
+        - the data will be a list of lists.
+        - take this nested list as an input for format_queried_data function
+        - return formatted_table_data as a dictionary with list of dictionaries
+
         a dictionary of table_names and columns and values.
         {
         'address': [{'address_id': 1, ....} .... ],
@@ -150,34 +154,84 @@ def extract_new_rows(last_checked, db_connection):
         }
     
     """
-    table_data = conn.run(f"SELECT * FROM {identifier(table)};")
-    formatted_table_data = format_queried_data(table_data,column_names,table_name)
-    return formatted_table_data
-    
-    
-    
+
+    # list of all tables in the db
+    tables_to_import = ["counterparty", "currency", "department", "design", "staff",
+                    "sales_order", "address", "payment", "purchase_order",
+                    "payment_type", "transaction"]
+
+    all_new_tables_data = {}
+    for table in tables_to_import:
+        new_rows = conn.run("query for table")
+        column_names = [column['name'] for column in conn.columns]
+        formatted_table_data = format_queried_data(column_names, new_rows)
+        all_new_tables_data[table] = formatted_table_data
+
     
 def update_last_checked():
     """
     Summary:
+    Initialise ssm_client using boto3.client("ssm")
+    Use AWS parameter store to access/update the 'last_checked' parameter
     Use .put_parameter method to update (using Overwrite=TRUE) 
-    the last_checked time each time get_data_from_db() func is run.
-    Initialise ssm_client using boto3
-    
-    
-    
+    the last_checked time each time extract_lambda_handler is run.
+            
     """
+    ssm_client = boto3.client("ssm")
+    last_checked = ssm_client.put_parameter(
+        Name = param_name,
+        Value = timestamp, #change the name as appropriate
+        Description='Timestamp of each Lambda execution',
+        Type="String",
+        Overwrite=True
+    )
+    return last_checked # consider what is the best output of this function.
     
-    
+
 def format_queried_data():
     """
-    
-    """
-    
-    
+    Summary:
+    Gets invoked within extract_new_rows function where it takes the table_data
+    (list of lists) as well as column names and formats them into a 
+    dictionary containing a list of dictionaries so that it
+    matches with the original data extracted from the database.
+
+    Args:
+        - new_rows: a list of lists from extract_new_rows function
+        - column_names: a list of column names
+
+    Returns:
+        - formatted new data
+        
+    E.g.
+            {
+        'address': [{'address_id': 1, ....} .... ],
+        'counterparty': [{'commercial_contact': 'Micheal Toy', ...} ...] 
+        }
+
+    Pseudocode below:
+    all_new_tables_data = {}
+    for table in tables:
+        new_rows = conn.run("query for table")
+        column_names = [column['name'] for column in conn.columns]
+        formatted_table_data = format_queried_data(column_names, new_rows)
+        all_new_tables_data[table] = formatted_table_data
+
+    """    
+
     
 def convert_dict_to_json_string(data):
     """
+    Summary:
+    This function converts the dictionary of extracted data (old and new) into a json string.
+    This is done so that it can be uploaded directly into S3 bucket without need for storage.
+    Uses json.dumps
+
+    Args:
+        - formatted table data: dict of lists of dicts
+    
+    Returns:
+        - json string of the data
     
     """
     
@@ -196,18 +250,20 @@ def obtain_bucket_name():
 
 def upload_files_to_s3():
     """
+    Summary:
+    This function takes the json string output from convert_dict_to_json_string func 
+    and uploads it into S3 bucket.
+    Uses put_object method
+
+    Args:
+        - json data: json string
+        - bucket name: a string, uses obtain_bucket_name function
     
+    Returns:
+        -Optional:
+            - success or failure message
+
     """
-
-
-
-
-
-
-
-
-
-
 
 def connect_to_db():
     return Connection(
@@ -356,7 +412,7 @@ def convert_to_json_and_upload_to_s3():
         try:
             s3_client.put_object(
                 Bucket = os.getenv("s3_ingestion_bucket"),
-                Key = f"{table}_{timestamp}.json",
+                Key = f"{table}/{timestamp}.json",
                 Body = tables_data_json,
                 ContentType = "application/json"
                 )

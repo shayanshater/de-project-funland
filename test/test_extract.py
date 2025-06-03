@@ -1,6 +1,7 @@
-from src.extract import get_data_from_db, convert_data_to_csv_files, connect_to_db, upload_csv_to_ingestion_bucket, extract_lambda_handler 
+from src.extract import get_db_credentials, get_data_from_db, convert_data_to_csv_files, connect_to_db, upload_csv_to_ingestion_bucket, extract_lambda_handler 
 import pytest
 from pg8000.native import DatabaseError
+from moto import mock_aws
 
 @pytest.fixture(scope="module")
 def conn():
@@ -56,7 +57,25 @@ class TestGetDataFromDB:
         assert get_data_from_db(tables_to_import) == "database error found"
     
 
+@mock_aws
+class TestGetDBCredentials():
+    def test_get_db_credentials_fetches_the_correct_username(self):
+        #assign
+        sm_client = boto3.client("secretsmanager")
+        response = sm_client.create_secret(
+            Name = "my_name",
+            SecretString = '{"username":"david","password":"EXAMPLE-PASSWORD"}'
+            )
         
+
+        #action
+        result = get_db_credentials()
+
+
+        #assert
+        assert isinstance(result, dict)
+        assert len(result) > 0
+
 
             
 
