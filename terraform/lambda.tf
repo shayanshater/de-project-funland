@@ -41,6 +41,7 @@ resource "aws_lambda_function" "extract_lambda_handler" {
   environment {
     variables = {
       s3_bucket = aws_s3_bucket.ingestion_bucket.bucket
+      db_password = "the_password"
     #add the .env? 
     }
   }

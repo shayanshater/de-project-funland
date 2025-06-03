@@ -1,20 +1,213 @@
 import os
 import logging
-from dotenv import load_dotenv
 from pg8000.native import Connection, identifier, literal, DatabaseError
-from pprint import pprint
-import csv
 import boto3
 from botocore.exceptions import ClientError
 from datetime import datetime, timezone
 import json
+
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
-load_dotenv()
-
 # connect to totesys database using the funciton below
+
+
+def lambda_handler(event, context):
+    
+    """ summary
+    
+    - obtain last_checked via ssm and store in a variable 
+    (in a specified timezone).
+    Store this in a variable so that it can be 
+    passed onto the next lambda handler(Transform) in order to 
+    transform the newly updated rows.
+        tests:
+        - check that last_checked is a datetime in the past and not in the future in the given time zone?
+        - check, change, check to see of obtaining is dynamic?
+        
+    
+    - obtain db_creds via secret manager and store in a variable
+        tests:
+        - check the password is a string and the port is an int etc. 
+    
+    - create db connection using db creds
+        tests:
+        - check that successful connection is made.
+        - check for a unsuccessful connection.
+    
+    - query for the new data using connection and last_checked
+        test:
+        - test that query list is same length as number of tables.
+        - test that the rows that are chosen have a last_updated 
+        date after our last_checked date.
+        (checking each last_updated cloumn in a for loop)
+    
+    - update last checked variable ## figure out where to do this step so we have access to the latest files for transform step.
+        test:
+        - test to see if the function updates the 
+        variable in the parameter store as expected
+    
+    - format the queried data into a python dictionary
+        test:
+        - the format of the dictionary is correct.
+        - the tables in the dictionary are only the tables that are available.
+
+    - convert this data into a json string
+        test:
+        - returns a string
+    
+    - obtain bucket name
+        test:
+        - that the bucket name starts with funland-ingestion-bucket-...... where the rest is numbers.
+    
+    - upload to s3 ingetion bucket using filename structure table/datetime.json 
+    - log the success of the operation
+        tests:
+        - right filename?
+        - successful upload message?
+    
+
+    Args:
+        no inputs as this is the first lambda
+        
+        
+    Returns:
+        dictionary
+        Optional:
+            - maybe the old timestamp?
+            - maybe a success message?
+            {"timestamp":"2020....", "message":"extract successful"}
+    """
+    
+    
+def get_last_checked():
+    """_summary_
+    Acess the aws parameter store, and obtain the last_checked parameter.
+    Store the parameter and its value in a dictionary and return it.
+    
+    Returns:
+        dictionary of paramter name and value
+        {"last_checked" : "2020...."}
+    """
+    
+def get_db_credentials():
+    """_summary_
+    This functions should return a dictionary of all 
+    the db credentials obtained from secret manager
+    
+    Returns:
+    dictionary of credentials
+    {"DB_USER":"totesys", DB_PASSWORD:".......}
+    """
+    client.get_secret(name = 'db_password') # do this for all the credentials
+    #format it in a nice way
+    #return it    
+
+
+
+def create_db_connection(credentials):
+    """ Summary:
+    Connect to the totesys database using credentials fetched from 
+    AWS Parameter Store (a separate function employed for this purpose).
+    Uses Connection module from pg8000.native library 
+    (from pg8000.native import Connection)
+
+
+
+    Return Connection
+    """
+    return Connection(
+        user = credentials["DB_USER"],
+        password = credentials["DB_PASSWORD"],
+        database = credentials["DB_NAME"],
+        host = credentials["DB_HOST"],
+        port = credentials["DB_PORT"]
+    )
+    
+def extract_new_rows(last_checked, db_connection):
+    """ 
+    Summary :
+        Use connection object to query for rows where 
+        the last_updated is after our last_checked variable.
+        
+        Uses the queried output as the input for format_queried_data function
+        and returns a formatted dictionary of tables, their columns and values.
+    
+    Args:
+        last_checked (datetime object): 
+        should be the datetime object store in parameter store
+        
+        db_connection:
+        a connection object to the totesys database
+    
+    
+    Returns:
+        a dictionary of table_names and columns and values.
+        {
+        'address': [{'address_id': 1, ....} .... ],
+        'counterparty': [{'commercial_contact': 'Micheal Toy', ...} ...] 
+        }
+    
+    """
+    table_data = conn.run(f"SELECT * FROM {identifier(table)};")
+    formatted_table_data = format_queried_data(table_data,column_names,table_name)
+    return formatted_table_data
+    
+    
+    
+    
+def update_last_checked():
+    """
+    Summary:
+    Use .put_parameter method to update (using Overwrite=TRUE) 
+    the last_checked time each time get_data_from_db() func is run.
+    Initialise ssm_client using boto3
+    
+    
+    
+    """
+    
+    
+def format_queried_data():
+    """
+    
+    """
+    
+    
+    
+def convert_dict_to_json_string(data):
+    """
+    
+    """
+    
+    
+def obtain_bucket_name():
+    """
+    Summary : this function should obtain the ingestion bucket name from the
+    environment variables and return it.
+    
+    
+    Returns:
+    dict {"ingestion_bucket" : "funland-project-......."}
+    
+    """
+
+
+def upload_files_to_s3():
+    """
+    
+    """
+
+
+
+
+
+
+
+
+
+
 
 def connect_to_db():
     return Connection(
