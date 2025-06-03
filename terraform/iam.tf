@@ -5,7 +5,6 @@
  data "aws_iam_policy_document" "trust_policy" {
    statement {
      effect = "Allow"
-
      principals {
        type        = "Service"
       identifiers = ["lambda.amazonaws.com"]
@@ -169,11 +168,13 @@ resource "aws_iam_role_policy_attachment" "lambda_sf_policy_attachment" {
 }
 
 # ------------------------------
-# IAM role for Scheduler to invoke Step Functions
-# ------------------------------
 
-# data for the role
-data "aws_iam_policy_document" "schedule_trust_policy" {
+# IAM Policy for Scheduler to invoke step function
+# ------------------------------
+ 
+# Data for role
+data "aws_iam_policy_document" "scheduler_role_document" {
+
   statement {
     effect = "Allow"
     principals {
@@ -184,14 +185,15 @@ data "aws_iam_policy_document" "schedule_trust_policy" {
   }
 }
 
-# create the role
-resource "aws_iam_role" "schedule_role" {
-  name_prefix     = "role-${var.scheduler}-"
-  assume_role_policy = data.aws_iam_policy_document.schedule_trust_policy.json
+
+# Create the role
+resource "aws_iam_role" "scheduler_role" {
+  name        = "scheduler-role"
+  assume_role_policy = data.aws_iam_policy_document.scheduler_role_document.json
 }
 
-# define a policy to allow scheduler to trigger the state machine | step function
-data "aws_iam_policy_document" "scheduler_involke_sf_document" {
+#defining the policy document 
+data "aws_iam_policy_document" "scheduler_policy_document" {
   statement {
     effect = "Allow"
     actions = ["states:StartExecution"]
@@ -199,15 +201,15 @@ data "aws_iam_policy_document" "scheduler_involke_sf_document" {
   }
 }
 
-# Create the policy
-resource "aws_iam_policy" "scheduler_sf_policy" {
-  name = "scheduler-sf-execution-policy"
-  policy = data.aws_iam_policy_document.scheduler_involke_sf_document.json
+#Create IAM policy for scheduler 
+resource "aws_iam_policy" "scheduler_policy" {
+  name = "scheduler-policy"
+  policy = data.aws_iam_policy_document.scheduler_policy_document.json
 }
 
-# Attaching policy
-resource "aws_iam_role_policy_attachment" "scheduler_sf_policy_attachment" {
-  role = aws_iam_role.schedule_role.name
-  policy_arn = aws_iam_policy.scheduler_sf_policy.arn
+# Attach
+resource "aws_iam_role_policy_attachment" "scheduler_policy_attachment" {
+  role       = aws_iam_role.scheduler_role.name
+  policy_arn = aws_iam_policy.scheduler_policy.arn
 }
 

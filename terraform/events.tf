@@ -14,20 +14,21 @@
 #   role_arn  = aws_iam_role.step_function_role.arn
 # }
 
-resource "aws_scheduler_schedule" "step_function_scheduler" {  ##TODO change the name
+
+resource "aws_scheduler_schedule" "trigger_15_min_intervals" {  
+
   name       = "my-step-function-scheduler"
-  #group_name = "step-function-group"
 
   flexible_time_window {
     mode = "OFF"
   }
 
-  schedule_expression = "rate(2 minute)"
+  schedule_expression = "rate(15 minutes)"  
 
   target {
     arn      = aws_sfn_state_machine.sfn_state_machine.arn
-    # role_arn = aws_iam_role.step_function_role.arn
-    role_arn = aws_iam_role.schedule_role.arn
+
+    role_arn = aws_iam_role.scheduler_role.arn
   }
 }
 
