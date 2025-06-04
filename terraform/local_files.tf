@@ -6,5 +6,3 @@
 #     filename = "${path.module}/../terraform.env" 
 # }
 
-#TODO: How to access bucket names from the python files? 
-

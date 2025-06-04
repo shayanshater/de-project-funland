@@ -40,7 +40,6 @@ resource "aws_lambda_function" "extract_lambda_handler" {
   layers = [aws_lambda_layer_version.lambda_layer.arn]
   environment {
     variables = {
-
       S3_INGESTION_BUCKET = aws_s3_bucket.ingestion_bucket.bucket
     }
   }
