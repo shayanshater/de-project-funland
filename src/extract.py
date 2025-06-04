@@ -1,20 +1,247 @@
 import os
 import logging
-from dotenv import load_dotenv
 from pg8000.native import Connection, identifier, literal, DatabaseError
-from pprint import pprint
-import csv
 import boto3
 from botocore.exceptions import ClientError
 from datetime import datetime, timezone
 import json
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
-load_dotenv()
-
 # connect to totesys database using the funciton below
+
+def lambda_handler(event, context):
+    """ summary
+    
+    - obtain last_checked via ssm and store in a variable 
+    (in a specified timezone).
+    Store this in a variable so that it can be 
+    passed onto the next lambda handler(Transform) in order to 
+    transform the newly updated rows.
+        tests:
+        - check that last_checked is a datetime in the past and not in the future in the given time zone?
+        - check, change, check to see of obtaining is dynamic?
+        
+    
+    - obtain db_creds via secret manager and store in a variable
+        tests:
+        - check the password is a string and the port is an int etc. 
+    
+    - create db connection using db creds
+        tests:
+        - check that successful connection is made.
+        - check for a unsuccessful connection.
+    
+    - query for the new data using connection and last_checked
+        test:
+        - test that query list is same length as number of tables.
+        - test that the rows that are chosen have a last_updated 
+        date after our last_checked date.
+        (checking each last_updated cloumn in a for loop)
+        
+    -format the data into a pandas df and upload to s3 bucket.
+        test:
+        - test that the file exists
+        - test that the content is valid
+    
+    - update last checked variable ## figure out where to do this step so we have access to the latest files for transform step.
+        test:
+        - test to see if the function updates the 
+        variable in the parameter store as expected
+    
+   
+    
+    - obtain bucket name
+        test:
+        - that the bucket name starts with funland-ingestion-bucket-...... where the rest is numbers.
+    
+
+    
+
+    Args:
+        no inputs as this is the first lambda
+        
+        
+    Returns:
+        dictionary
+        Optional:
+            - maybe the old timestamp?
+            - maybe a success message?
+            {"timestamp":"2020....", "message":"extract successful"}
+    """
+    
+    
+    last_checked = get_last_checked()
+    db_credentials = get_db_credentials()
+    db_conn = create_db_connection(db_credentials)
+    
+    tables_to_import = ["counterparty", "currency", "department", "design", "staff",
+                    "sales_order", "address", "payment", "purchase_order",
+                    "payment_type", "transaction"]
+    
+    
+    ingestion_bucket = obtain_bucket_name()
+    
+    for table in tables_to_import:
+        column_names, new_rows = extract_new_rows(table, last_checked, db_conn)
+        if new_rows:
+            convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, column_names, new_rows)
+        
+    update_last_checked() 
+    return {"message":"success", "timestamp_to_transform": last_checked}
+
+    
+def get_last_checked(ssm_client):
+    """
+    Summary:
+    Access the aws parameter store, and obtain the last_checked parameter.
+    Store the parameter and its value in a dictionary and return it.
+    
+    Returns:
+        dictionary of paramter name and value
+        {"last_checked" : "2020...."}
+    """
+    response = ssm_client.get_parameter(
+    Name='last_checked',
+    WithDecryption=True
+    )
+    
+    result = {"last_checked": response['Parameter']['Value']}
+    
+    return result
+    
+    
+    
+    
+    
+def get_db_credentials(sm_client):
+    """_summary_
+    This functions should return a dictionary of all 
+    the db credentials obtained from secret manager
+    
+    Returns:
+    dictionary of credentials
+    {"DB_USER":"totesys", DB_PASSWORD:".......}
+    """
+    response = sm_client.get_secret_value(SecretId = 'db_creds') # do this for all the credentials
+    db_credentials = json.loads(response["SecretString"])
+    return db_credentials
+
+
+def create_db_connection(db_credentials):
+    """ Summary:
+    Connect to the totesys database using credentials fetched from 
+    AWS Parameter Store (a separate function employed for this purpose).
+    Uses Connection module from pg8000.native library 
+    (from pg8000.native import Connection)
+
+
+
+    Return Connection
+    """
+    return Connection(
+        user = db_credentials["DB_USER"],
+        password = db_credentials["DB_PASSWORD"],
+        database = db_credentials["DB_NAME"],
+        host = db_credentials["DB_HOST"],
+        port = db_credentials["DB_PORT"]
+    )
+    
+def extract_new_rows(table_name, last_checked, db_connection):
+    """ 
+    Summary :
+        Use connection object to query for rows in a given table where 
+        the last_updated is after our last_checked variable.
+        
+        returns a tuple of column names and new rows.
+    
+    Args:
+    
+        table_name (str):
+        name of the table to query for
+        
+        last_checked (datetime object): 
+        should be the datetime object store in parameter store
+        
+        db_connection:
+        a connection object to the totesys database
+    
+    
+    Returns:
+        - extract new data from updated tables using SQL query.
+        - the data will be a list of lists. 
+        
+        returns a tuple of (column_names, new_rows):
+    """
+
+
+def convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, column_names, new_rows):
+    """
+    Summary:
+    This function will take the column names and new row data, 
+    and create a pandas dataframe from this.
+    From here, this dataframe is uploaded directly to given s3 bucket as
+    a csv file.
+    
+
+    Args:
+        ingestion_bucket (str): name of the ingestion bucket
+        table (str): name of the table with the new data
+        column_names (list): list of column names
+        new_rows (list): nested list of new row values
+        
+        
+    returns:
+        sucess message through a log
+    """
+
+
+    # list of all tables in the db
+    
+
+    all_new_tables_data = {}
+    for table in tables_to_import:
+        new_rows = conn.run("query for table")
+        column_names = [column['name'] for column in conn.columns]
+        formatted_table_data = format_queried_data(column_names, new_rows)
+        all_new_tables_data[table] = formatted_table_data
+
+    
+def update_last_checked():
+    """
+    Summary:
+    Initialise ssm_client using boto3.client("ssm")
+    Use AWS parameter store to access/update the 'last_checked' parameter
+    Use .put_parameter method to update (using Overwrite=TRUE) 
+    the last_checked time each time extract_lambda_handler is run.
+            
+    """
+    ssm_client = boto3.client("ssm")
+    last_checked = ssm_client.put_parameter(
+        Name = param_name,
+        Value = timestamp, #change the name as appropriate
+        Description='Timestamp of each Lambda execution',
+        Type="String",
+        Overwrite=True
+    )
+    return last_checked # consider what is the best output of this function.
+    
+
+
+    
+def obtain_bucket_name():
+    """
+    Summary : this function should obtain the ingestion bucket name from the
+    environment variables and return it.
+    
+    
+    Returns:
+    dict {"ingestion_bucket" : "funland-project-......."}
+    
+    """
+
+
 
 def connect_to_db():
     return Connection(
@@ -29,6 +256,47 @@ def connect_to_db():
 tables_to_import = ["counterparty", "currency", "department", "design", "staff",
                     "sales_order", "address", "payment", "purchase_order",
                     "payment_type", "transaction"]
+
+
+## AWS Param Store
+
+def write_last_ingested_to_ssm():
+    ssm_client = boto3.client('ssm')
+    param_name = 'lambda_timestamp'
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+
+    try:
+        ssm_client.put_parameter(
+            Name=param_name,
+            Description='Timestamp of each Lambda execution',
+            Value=timestamp,
+            Type="String",
+            Overwrite=True
+        )
+    except ClientError as essm:
+        logger.error(f"SSM error: {str(essm)}")
+        return { 'statusCode': 404, 'Body' : {str(essm)}}
+
+def read_last_ingested_from_ssm(param_name):
+    # Initialize the SSM client
+    ssm_client = boto3.client('ssm')
+    
+    # Define the parameter name
+    param_name = 'lambda_timestamp'
+    
+    # Retrieve the parameter value
+    response = ssm_client.get_parameter(Name=param_name)
+    print(response)
+    read_last_ingested = response['Parameter']['Value']
+    
+    # Use the timestamp as needed
+    print(f"Timestamp retrieved: {read_last_ingested}")
+    return read_last_ingested
+    
+    # return {
+    #     'statusCode': 200,
+    #     'body': timestamp
+    # }
 
 
 # for table in tables_to_import:
@@ -52,15 +320,16 @@ def get_data_from_db(tables_to_import):
    
     #Check if it’s the first time we’re running
 
-    if os.path.exists("last_ingested.txt"): # check how to amend this to integrate AWS Parameter store for last checked time!!!
-        with open("last_ingested.txt", "r") as f:
-            last_ingested = f.read().strip()
-    else:
-        last_ingested = None
+    # if os.path.exists("last_ingested.txt"): # check how to amend this to integrate AWS Parameter store for last checked time!!!
+    #     with open("last_ingested.txt", "r") as f:
+    #         last_ingested = f.read().strip()
+    # else:
+    #     last_ingested = None
     
     #We’ll use this time at the end to say: "This is the last time I checked."
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")            
-    
+    last_ingested = get_last_ingested_from_ssm(param_name)
+
     try:
         for table in tables_to_import:
             if last_ingested is None:  # meaning if this is the first ever run
@@ -121,7 +390,7 @@ def convert_to_json_and_upload_to_s3():
         try:
             s3_client.put_object(
                 Bucket = os.getenv("s3_ingestion_bucket"),
-                Key = f"{table}_{timestamp}.json",
+                Key = f"{table}/{timestamp}.json",
                 Body = tables_data_json,
                 ContentType = "application/json"
                 )
@@ -131,47 +400,13 @@ def convert_to_json_and_upload_to_s3():
             logger.error(e)
             print (f"Could not upload to S3")
             return {
-                "statusCode": 404, #find the right code
+                "statusCode": 500, #find the right code
                 "body": json.dumps(f"Error occured: {str(e)}")
             }
             
-        # header = tables_data[table][0].keys()
-        # with open(f"data/extract/{table}_{timestamp}.csv",'w') as csv_file:
-        #     writer = csv.DictWriter(csv_file, fieldnames=header)
-        #     writer.writeheader()
-        #     for row in tables_data[table]:
-        #         writer.writerow(row)
-
-
-# def upload_file_to_ingestion_bucket(file_name, bucket_name, s3_client, object_name=None):
-#     """
-#     Uploads files to s3 bucket 
-
-#     args: 
-#     file_name - from convert_data_to_csv_files - {table}_{timestamp}.csv
-#     bucket_name - 
-
-#     """
-#     if object_name is None:
-#         object_name = os.path.basename(file_name)
-#     s3_client = boto3.client("s3")
-#     try:
-#         s3_client.put_object(file_name,bucket_name,object_name)
-#     except ClientError as ce:
-#         logger.error(ce)
-#         print(f"Failed to upload '{file_name}' to bucket '{bucket_name}'.")
-#         return False
-#     print(f"Succesfully uploaded '{file_name}' to bucket '{bucket_name}'.")
-#     return True
-
-# upload_csv_to_ingestion_bucket("data/extract/address.csv",
-#                                "funland-ingestion-bucket-20250529092926665800000002",
-#                                "s3_client")
-
-
 def extract_lambda_handler(event, context):
     """
-    lambda function runs previous functions to get the data from the DB, convert to csv and upload to the S3 bucket. 
+    lambda function runs previous functions to get the data from the DB, convert to json and upload to the S3 bucket. 
 
     args: 
     event - will be invoked every 15 mins (eventbridge/stepfunction)
@@ -198,41 +433,19 @@ def extract_lambda_handler(event, context):
 
     updated_tables = []
 
-    for table in tables_data.keys():
-        if tables_data[table]: 
-            updated_tables.append(table)
+    # for table in tables_data.keys():
+    #     if tables_data[table]: 
+    #         updated_tables.append(table)
 
-    for table in tables_data:
-        if not tables_data[table]:
-            continue
-        file_name=f"data/extract/{table}_{timestamp}.csv"
+    # for table in tables_data:
+    #     if not tables_data[table]:
+    #         continue
+    #     file_name=f"data/extract/{table}_{timestamp}.csv"
       #  updated_tables.append(file_name)
 
-    upload_csv_to_ingestion_bucket(file_name,s3_bucket,s3_client,object_name=None)
+    # upload_csv_to_ingestion_bucket(file_name,s3_bucket,s3_client,object_name=None)
 
     return {
         'statusCode': 200,
         'body': {'csv_files_uploaded': [updated_tables]}
-    }
-
-
-### AWS Parameter Store
-
-def lambda_handler(event, context):
-    # Initialize the SSM client
-    ssm_client = boto3.client('ssm')
-    
-    # Define the parameter name
-    parameter_name = '/path/to/timestamp'
-    
-    # Retrieve the parameter value
-    response = ssm_client.get_parameter(Name=parameter_name)
-    timestamp = response['Parameter']['Value']
-    
-    # Use the timestamp as needed
-    print(f"Timestamp retrieved: {timestamp}")
-    
-    return {
-        'statusCode': 200,
-        'body': timestamp
     }
