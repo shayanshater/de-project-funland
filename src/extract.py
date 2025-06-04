@@ -11,6 +11,8 @@ logger.setLevel(logging.INFO)
 
 # connect to totesys database using the funciton below
 
+#test test test
+
 def lambda_handler(event, context):
     """ summary
     
