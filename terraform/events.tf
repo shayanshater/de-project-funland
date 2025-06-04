@@ -1,22 +1,5 @@
-
-# #set up EventBridge to trigger lambda every 15 min
-# resource "aws_cloudwatch_event_rule" "schedule_rule" {
-#   name        = "schedule-cloudewatch-trigger-step-function"
-#   description = "Run the step function every 15 minutes"
-#   schedule_expression = "rate(2 minutes)"
-# }
-
-# #connect EventBridge to the Lambda
-# resource "aws_cloudwatch_event_target" "schedule_target" {
-#   target_id = "StepFunctionTarget"
-#   rule      = aws_cloudwatch_event_rule.schedule_rule.name
-#   arn       = aws_sfn_state_machine.sfn_state_machine.arn
-#   role_arn  = aws_iam_role.step_function_role.arn
-# }
-
-
+# add scedule fo step function | state machine
 resource "aws_scheduler_schedule" "trigger_15_min_intervals" {  
-
   name       = "my-step-function-scheduler"
 
   flexible_time_window {
@@ -27,7 +10,6 @@ resource "aws_scheduler_schedule" "trigger_15_min_intervals" {
 
   target {
     arn      = aws_sfn_state_machine.sfn_state_machine.arn
-
     role_arn = aws_iam_role.scheduler_role.arn
   }
 }
