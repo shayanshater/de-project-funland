@@ -211,17 +211,20 @@ def update_last_checked(ssm_client):
     the last_checked time each time extract_lambda_handler is run.
             
     """
-    
+
     now=str(datetime.now())
-    last_checked = ssm_client.put_parameter(
-        Name = "last_checked",
-        Value = now, #change the name as appropriate
-        Description='Timestamp of each Lambda execution',
-        Type="String",
-        Overwrite=True
-    )
-    return now # consider what is the best output of this function.
-    
+
+    try:
+        last_checked = ssm_client.put_parameter(
+            Name = "last_checked",
+            Value = now, #change the name as appropriate
+            Description='Timestamp of each Lambda execution',
+            Type="String",
+            Overwrite=True
+        )
+        return now # consider what is the best output of this function.
+    except Exception as e:
+        raise {str(e)}
 
 
     

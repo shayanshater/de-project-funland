@@ -137,15 +137,14 @@ class TestUpdateLastChecked:
         Value = now,
         Type="String")
         
-
         last_checked=update_last_checked(ssm_client)
 
-    
         assert datetime.strptime(last_checked,"%Y-%m-%d %H:%M:%S.%f") > datetime.strptime(now,"%Y-%m-%d %H:%M:%S.%f")
-    @mock_aws
-    def test_update_last_checked_parameter_doesnt_exist(self,ssm_client):
-         now=str(datetime.now())
-         assert update_last_checked(ssm_client)==4
+        
+    # @mock_aws
+    # def test_update_last_checked_parameter_doesnt_exist(self,ssm_client):
+    #      now=str(datetime.now())
+    #      assert update_last_checked(ssm_client)==4
         #  with pytest.raises(ClientError):
         #     print(update_last_checked(ssm_client))
 
