@@ -5,6 +5,7 @@ from moto import mock_aws
 import boto3
 from datetime import datetime
 import json
+# from botocore.exceptions import ClientError
 
 
 
@@ -40,13 +41,12 @@ class TestGetLastChecked:
         
         last_checked = get_last_checked(ssm_client)
         assert last_checked["last_checked"] == new_date
-        
-        
     
-        
-        
-        
+    def test_get_last_checked_returns_error_if_no_datetime_available(self, ssm_client):
+        with pytest.raises(ssm_client.exceptions.ParameterNotFound):
+            get_last_checked(ssm_client)
 
+        
 
 
 
@@ -95,6 +95,11 @@ class TestGetDBCredentials():
 
         #assert
         assert result == secret_dict
+
+    
+    def test_get_db_credentials_returns_error_if_no_credentials_available(self, sm_client):
+        with pytest.raises(sm_client.exceptions.ResourceNotFoundException):
+            get_db_credentials(sm_client)
 
 
             
