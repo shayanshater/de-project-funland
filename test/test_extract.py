@@ -1,11 +1,11 @@
-from src.extract import get_db_credentials, get_last_checked, create_db_connection
+from src.extract import get_db_credentials, get_last_checked, create_db_connection, update_last_checked
 import pytest
 from pg8000.native import DatabaseError, InterfaceError
 from moto import mock_aws
 import boto3
 from datetime import datetime
 import json
-# from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError
 
 
 
@@ -124,6 +124,38 @@ class TestGetDataFromDB:
                         WHERE table_name = '{table_name}')"""
             expect = conn.run(base_query)
             assert expect == [[True]]
+
+
+
+class TestUpdateLastChecked:
+    @mock_aws
+    def test_update_last_checked_updates(self,ssm_client):
+        now=str(datetime.now())
+        #print(now)
+        ssm_client.put_parameter(
+        Name = "last_checked",
+        Value = now,
+        Type="String")
+        
+
+        last_checked=update_last_checked(ssm_client)
+
+    
+        assert datetime.strptime(last_checked,"%Y-%m-%d %H:%M:%S.%f") > datetime.strptime(now,"%Y-%m-%d %H:%M:%S.%f")
+    @mock_aws
+    def test_update_last_checked_parameter_doesnt_exist(self,ssm_client):
+         now=str(datetime.now())
+         assert update_last_checked(ssm_client)==4
+        #  with pytest.raises(ClientError):
+        #     print(update_last_checked(ssm_client))
+
+            
+
+        
+
+
+
+
 
     
 
