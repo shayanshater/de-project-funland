@@ -1,15 +1,12 @@
-from src.extract import get_db_credentials, get_data_from_db, convert_data_to_csv_files, connect_to_db, upload_csv_to_ingestion_bucket, extract_lambda_handler 
+from src.extract import get_db_credentials, get_last_checked
 import pytest
 from pg8000.native import DatabaseError
 from moto import mock_aws
+import boto3
+from datetime import datetime
+import json
 
-@pytest.fixture(scope="module")
-def conn():
-    '''Runs seed before starting tests, yields, runs tests,
-       then closes connection to db'''
-    conn = connect_to_db()
-    yield conn
-    conn.close()
+
 
 @pytest.fixture(scope="module")
 def tables_to_import():
@@ -19,9 +16,43 @@ def tables_to_import():
                     "department", "design", "staff", "sales_order",
                     "address", "payment", "purchase_order", 
                     "payment_type", "transaction"]
+    
+    
+    
+@pytest.fixture(scope='function')
+def ssm_client():
+    return boto3.client('ssm')
+@pytest.fixture(scope='function')
+def sm_client():
+    return boto3.client('secretsmanager')
 
 
+
+@mock_aws
+class TestGetLastChecked:
+    def test_get_last_checked_obtains_the_correct_vaiable(self, ssm_client):
+        new_date = str(datetime.now())
+        ssm_client.put_parameter(
+            Name = 'last_checked',
+            Value = new_date,
+            Type = 'String'
+        )
+        
+        last_checked = get_last_checked(ssm_client)
+        assert last_checked["last_checked"] == new_date
+        
+        
+    
+        
+        
+        
+
+
+
+
+@mock_aws
 class TestGetDataFromDB:
+    @pytest.mark.skip()
     def test_all_tables_exist(self, conn):
         tables_to_check = ["counterparty", "currency", 
                     "department", "design", "staff", "sales_order",
@@ -35,46 +66,35 @@ class TestGetDataFromDB:
             expect = conn.run(base_query)
             assert expect == [[True]]
 
-
-    def test_get_data_from_db_returns_dictionary_with_correct_tables_and_row_data(self, tables_to_import):
-
-        tables_data = get_data_from_db(tables_to_import)
-
-        
-        #assert isinstance(tables_data, dict)
-        assert list(tables_data.keys()) == ["counterparty", "currency", 
-                    "department", "design", "staff", "sales_order",
-                    "address", "payment", "purchase_order", 
-                    "payment_type", "transaction"]
-        
-        for table in tables_data.keys():
-            for row in tables_data[table]:
-                assert isinstance(row,dict)
-                
-                
-    def test_get_data_from_db_gives_error(self, tables_to_import):
-        tables_to_import[0] = 'ounterparty'
-        assert get_data_from_db(tables_to_import) == "database error found"
     
 
 @mock_aws
 class TestGetDBCredentials():
-    def test_get_db_credentials_fetches_the_correct_username(self):
+    def test_get_db_credentials_fetches_the_correct_username(self, sm_client):
         #assign
-        sm_client = boto3.client("secretsmanager")
-        response = sm_client.create_secret(
-            Name = "my_name",
-            SecretString = '{"username":"david","password":"EXAMPLE-PASSWORD"}'
+        secret_dict = {
+            "DB_USER":"user",
+            "DB_PASSWORD":"password",
+            "DB_HOST":"host",
+            "DB_PORT":"5432",
+            "DB_NAME":"test_db"
+            }
+
+        secret_string = json.dumps(secret_dict)
+        
+        
+        sm_client.create_secret(
+            Name = "db_creds",
+            SecretString = secret_string
             )
         
 
         #action
-        result = get_db_credentials()
+        result = get_db_credentials(sm_client)
 
 
         #assert
-        assert isinstance(result, dict)
-        assert len(result) > 0
+        assert result == secret_dict
 
 
             

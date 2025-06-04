@@ -12,7 +12,6 @@ logger.setLevel(logging.INFO)
 # connect to totesys database using the funciton below
 
 def lambda_handler(event, context):
-    
     """ summary
     
     - obtain last_checked via ssm and store in a variable 
@@ -40,30 +39,24 @@ def lambda_handler(event, context):
         - test that the rows that are chosen have a last_updated 
         date after our last_checked date.
         (checking each last_updated cloumn in a for loop)
+        
+    -format the data into a pandas df and upload to s3 bucket.
+        test:
+        - test that the file exists
+        - test that the content is valid
     
     - update last checked variable ## figure out where to do this step so we have access to the latest files for transform step.
         test:
         - test to see if the function updates the 
         variable in the parameter store as expected
     
-    - format the queried data into a python dictionary
-        test:
-        - the format of the dictionary is correct.
-        - the tables in the dictionary are only the tables that are available.
-
-    - convert this data into a json string
-        test:
-        - returns a string
+   
     
     - obtain bucket name
         test:
         - that the bucket name starts with funland-ingestion-bucket-...... where the rest is numbers.
     
-    - upload to s3 ingetion bucket using filename structure table/datetime.json 
-    - log the success of the operation
-        tests:
-        - right filename?
-        - successful upload message?
+
     
 
     Args:
@@ -79,18 +72,50 @@ def lambda_handler(event, context):
     """
     
     
-def get_last_checked():
-    """_summary_
-    Acess the aws parameter store, and obtain the last_checked parameter.
+    last_checked = get_last_checked()
+    db_credentials = get_db_credentials()
+    db_conn = create_db_connection(db_credentials)
+    
+    tables_to_import = ["counterparty", "currency", "department", "design", "staff",
+                    "sales_order", "address", "payment", "purchase_order",
+                    "payment_type", "transaction"]
+    
+    
+    ingestion_bucket = obtain_bucket_name()
+    
+    for table in tables_to_import:
+        column_names, new_rows = extract_new_rows(table, last_checked, db_conn)
+        if new_rows:
+            convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, column_names, new_rows)
+        
+    update_last_checked() 
+    return {"message":"success", "timestamp_to_transform": last_checked}
+
+    
+def get_last_checked(ssm_client):
+    """
+    Summary:
+    Access the aws parameter store, and obtain the last_checked parameter.
     Store the parameter and its value in a dictionary and return it.
     
     Returns:
         dictionary of paramter name and value
         {"last_checked" : "2020...."}
     """
+    response = ssm_client.get_parameter(
+    Name='last_checked',
+    WithDecryption=True
+    )
     
-def get_db_credentials():
-    pass
+    result = {"last_checked": response['Parameter']['Value']}
+    
+    return result
+    
+    
+    
+    
+    
+def get_db_credentials(sm_client):
     """_summary_
     This functions should return a dictionary of all 
     the db credentials obtained from secret manager
@@ -99,13 +124,12 @@ def get_db_credentials():
     dictionary of credentials
     {"DB_USER":"totesys", DB_PASSWORD:".......}
     """
-    sm_client = boto3.client("secretsmanager")
-    response = sm_client.get_secret(name = 'db_password') # do this for all the credentials
-    credentials = response["SecretString"]
-    #format it in a nice way
-    #return it    
+    response = sm_client.get_secret_value(SecretId = 'db_creds') # do this for all the credentials
+    db_credentials = json.loads(response["SecretString"])
+    return db_credentials
 
-def create_db_connection(credentials):
+
+def create_db_connection(db_credentials):
     """ Summary:
     Connect to the totesys database using credentials fetched from 
     AWS Parameter Store (a separate function employed for this purpose).
@@ -117,23 +141,26 @@ def create_db_connection(credentials):
     Return Connection
     """
     return Connection(
-        user = credentials["DB_USER"],
-        password = credentials["DB_PASSWORD"],
-        database = credentials["DB_NAME"],
-        host = credentials["DB_HOST"],
-        port = credentials["DB_PORT"]
+        user = db_credentials["DB_USER"],
+        password = db_credentials["DB_PASSWORD"],
+        database = db_credentials["DB_NAME"],
+        host = db_credentials["DB_HOST"],
+        port = db_credentials["DB_PORT"]
     )
     
-def extract_new_rows(last_checked, db_connection):
+def extract_new_rows(table_name, last_checked, db_connection):
     """ 
     Summary :
-        Use connection object to query for rows where 
+        Use connection object to query for rows in a given table where 
         the last_updated is after our last_checked variable.
         
-        Uses the queried output as the input for format_queried_data function
-        and returns a formatted dictionary of tables, their columns and values.
+        returns a tuple of column names and new rows.
     
     Args:
+    
+        table_name (str):
+        name of the table to query for
+        
         last_checked (datetime object): 
         should be the datetime object store in parameter store
         
@@ -143,22 +170,35 @@ def extract_new_rows(last_checked, db_connection):
     
     Returns:
         - extract new data from updated tables using SQL query.
-        - the data will be a list of lists.
-        - take this nested list as an input for format_queried_data function
-        - return formatted_table_data as a dictionary with list of dictionaries
-
-        a dictionary of table_names and columns and values.
-        {
-        'address': [{'address_id': 1, ....} .... ],
-        'counterparty': [{'commercial_contact': 'Micheal Toy', ...} ...] 
-        }
-    
+        - the data will be a list of lists. 
+        
+        returns a tuple of (column_names, new_rows):
     """
 
+
+def convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, column_names, new_rows):
+    """
+    Summary:
+    This function will take the column names and new row data, 
+    and create a pandas dataframe from this.
+    From here, this dataframe is uploaded directly to given s3 bucket as
+    a csv file.
+    
+
+    Args:
+        ingestion_bucket (str): name of the ingestion bucket
+        table (str): name of the table with the new data
+        column_names (list): list of column names
+        new_rows (list): nested list of new row values
+        
+        
+    returns:
+        sucess message through a log
+    """
+
+
     # list of all tables in the db
-    tables_to_import = ["counterparty", "currency", "department", "design", "staff",
-                    "sales_order", "address", "payment", "purchase_order",
-                    "payment_type", "transaction"]
+    
 
     all_new_tables_data = {}
     for table in tables_to_import:
@@ -188,53 +228,7 @@ def update_last_checked():
     return last_checked # consider what is the best output of this function.
     
 
-def format_queried_data():
-    """
-    Summary:
-    Gets invoked within extract_new_rows function where it takes the table_data
-    (list of lists) as well as column names and formats them into a 
-    dictionary containing a list of dictionaries so that it
-    matches with the original data extracted from the database.
 
-    Args:
-        - new_rows: a list of lists from extract_new_rows function
-        - column_names: a list of column names
-
-    Returns:
-        - formatted new data
-        
-    E.g.
-            {
-        'address': [{'address_id': 1, ....} .... ],
-        'counterparty': [{'commercial_contact': 'Micheal Toy', ...} ...] 
-        }
-
-    Pseudocode below:
-    all_new_tables_data = {}
-    for table in tables:
-        new_rows = conn.run("query for table")
-        column_names = [column['name'] for column in conn.columns]
-        formatted_table_data = format_queried_data(column_names, new_rows)
-        all_new_tables_data[table] = formatted_table_data
-
-    """    
-
-    
-def convert_dict_to_json_string(data):
-    """
-    Summary:
-    This function converts the dictionary of extracted data (old and new) into a json string.
-    This is done so that it can be uploaded directly into S3 bucket without need for storage.
-    Uses json.dumps
-
-    Args:
-        - formatted table data: dict of lists of dicts
-    
-    Returns:
-        - json string of the data
-    
-    """
-    
     
 def obtain_bucket_name():
     """
@@ -248,22 +242,6 @@ def obtain_bucket_name():
     """
 
 
-def upload_files_to_s3():
-    """
-    Summary:
-    This function takes the json string output from convert_dict_to_json_string func 
-    and uploads it into S3 bucket.
-    Uses put_object method
-
-    Args:
-        - json data: json string
-        - bucket name: a string, uses obtain_bucket_name function
-    
-    Returns:
-        -Optional:
-            - success or failure message
-
-    """
 
 def connect_to_db():
     return Connection(
