@@ -11,8 +11,6 @@ logger.setLevel(logging.INFO)
 
 # connect to totesys database using the funciton below
 
-#test test test
-
 def lambda_handler(event, context):
     """ summary
     
@@ -83,7 +81,7 @@ def lambda_handler(event, context):
                     "payment_type", "transaction"]
     
     
-    ingestion_bucket = obtain_bucket_name()
+    ingestion_bucket = get_bucket_name()
     
     for table in tables_to_import:
         column_names, new_rows = extract_new_rows(table, last_checked, db_conn)
@@ -226,16 +224,27 @@ def update_last_checked():
 
 
     
-def obtain_bucket_name():
+def get_bucket_name():
     """
     Summary : this function should obtain the ingestion bucket name from the
     environment variables and return it.
     
     
     Returns:
-    dict {"ingestion_bucket" : "funland-project-......."}
+    dict {"ingestion_bucket" : "funland-ingestion-bucket-......."}
     
     """
+    s3_client = boto3.client("s3")
+    buckets_list = s3_client.list_buckets()["Buckets"]
+    print(buckets_list)
+    for bucket in buckets_list:
+        print(bucket)
+        if "funland-ingestion-bucket-" in bucket["Name"]:
+        # if bucket["Name"].startswith("funland-ingestion-bucket-"):
+            return {"ingestion_bucket":f'{bucket["Name"]}'}
+        else:
+            return "Ingestion Bucket does not exist!"
+
 
 
 

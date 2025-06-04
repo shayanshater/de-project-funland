@@ -1,4 +1,4 @@
-from src.extract import get_db_credentials, get_last_checked, create_db_connection
+from src.extract import get_db_credentials, get_last_checked, create_db_connection, get_bucket_name
 import pytest
 from pg8000.native import DatabaseError, InterfaceError
 from moto import mock_aws
@@ -23,9 +23,14 @@ def tables_to_import():
 @pytest.fixture(scope='function')
 def ssm_client():
     return boto3.client('ssm')
+
 @pytest.fixture(scope='function')
 def sm_client():
     return boto3.client('secretsmanager')
+
+@pytest.fixture(scope='function')
+def s3_client():
+    return boto3.client('s3')
 
 
 
@@ -109,25 +114,75 @@ class TestDBConnection:
             create_db_connection(db_credentials)
 
 
-@mock_aws
-class TestGetDataFromDB:
-    @pytest.mark.skip()
-    def test_all_tables_exist(self, conn):
-        tables_to_check = ["counterparty", "currency", 
-                    "department", "design", "staff", "sales_order",
-                    "address", "payment", "purchase_order", 
-                    "payment_type", "transaction"]
+# @mock_aws
+# class TestGetDataFromDB:
+#     @pytest.mark.skip()
+#     def test_all_tables_exist(self, conn):
+#         tables_to_check = ["counterparty", "currency", 
+#                     "department", "design", "staff", "sales_order",
+#                     "address", "payment", "purchase_order", 
+#                     "payment_type", "transaction"]
         
         
-        for table_name in tables_to_check:
-            base_query = f"""SELECT EXISTS (SELECT FROM information_schema.tables \
-                        WHERE table_name = '{table_name}')"""
-            expect = conn.run(base_query)
-            assert expect == [[True]]
+#         for table_name in tables_to_check:
+#             base_query = f"""SELECT EXISTS (SELECT FROM information_schema.tables \
+#                         WHERE table_name = '{table_name}')"""
+#             expect = conn.run(base_query)
+#             assert expect == [[True]]
 
     
+@mock_aws
+class TestGetBucketName:
+    def test_get_bucket_name_gets_the_correct_bucket_name_which_is_dynamic(self, s3_client):
+        #assign
+
+        buckets_list = [
+            {'Name': 'funland-ingestion-bucket-20250604125203238900000004',
+             'CreationDate': datetime.datetime(2025, 6, 4, 12, 52, 5, tzinfo=tzutc())
+             }         
+        ]
+
+        s3_client. #creat s3 buckets and use our func to see if it can
+        #retreive these newly created mock buckets!
+        # the buckets_list provided above (line 139) - does it serve the same purpose as
+        #creating mock buckets using s3 client in line 145?
 
 
+
+        #action
+        result = get_bucket_name()
+        expected = {"ingestion_bucket": 'funland-ingestion-bucket-20250604125203238900000004'}
+
+        #assert
+        assert result == expected
+
+
+        # secret_string = json.dumps(secret_dict)
+                
+        # sm_client.create_secret(
+        #     Name = "db_creds",
+        #     SecretString = secret_string
+        #     )
+        
+        # #action
+        # result = get_db_credentials(sm_client)
+
+        # #assert
+        # assert result == secret_dict
+
+
+    
+    def test_get_bucket_name_raises_error_if_bucket_not_found(self, s3_client):
+        
+        #assign
+        expected = "Ingestion Bucket does not exist!"
+        
+        #action
+        result = get_bucket_name()
+        
+        #assert
+        assert result == expected
+    
 
             
 
