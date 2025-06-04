@@ -92,7 +92,7 @@ def lambda_handler(event, context):
     return {"message":"success", "timestamp_to_transform": last_checked}
 
     
-def get_last_checked(ssm_client):
+def get_last_checked(ssm_client): # test and code complete
     """
     Summary:
     Access the aws parameter store, and obtain the last_checked parameter.
@@ -106,16 +106,11 @@ def get_last_checked(ssm_client):
     Name='last_checked',
     WithDecryption=True
     )
-    
     result = {"last_checked": response['Parameter']['Value']}
-    
     return result
     
-    
-    
-    
-    
-def get_db_credentials(sm_client):
+   
+def get_db_credentials(sm_client): # test and code complete
     """_summary_
     This functions should return a dictionary of all 
     the db credentials obtained from secret manager
@@ -129,14 +124,12 @@ def get_db_credentials(sm_client):
     return db_credentials
 
 
-def create_db_connection(db_credentials):
+def create_db_connection(db_credentials): #test and code complete
     """ Summary:
     Connect to the totesys database using credentials fetched from 
     AWS Parameter Store (a separate function employed for this purpose).
     Uses Connection module from pg8000.native library 
     (from pg8000.native import Connection)
-
-
 
     Return Connection
     """
@@ -148,7 +141,8 @@ def create_db_connection(db_credentials):
         port = db_credentials["DB_PORT"]
     )
     
-def extract_new_rows(table_name, last_checked, db_connection):
+
+def extract_new_rows(table_name, last_checked, db_connection): 
     """ 
     Summary :
         Use connection object to query for rows in a given table where 
