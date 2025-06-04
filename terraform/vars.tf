@@ -35,3 +35,17 @@ variable "step_function" {
   default = "funland-etl"
 }
 
+variable "scheduler" {
+  type = string
+  default = "funland-etl-schedule"  
+}
+
+variable "notification_email" {
+  description = "Email address to receive Lambda failure notifications"
+  type        = string
+}
+
+variable "aws_region" {
+  type    = string
+  default = "eu-west-2"
+}
