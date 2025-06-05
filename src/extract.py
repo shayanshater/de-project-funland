@@ -1,6 +1,6 @@
 import os
 import logging
-from pg8000.native import Connection, identifier, literal, DatabaseError
+from pg8000.native import Connection, identifier, literal, DatabaseError, InterfaceError
 import boto3
 from botocore.exceptions import ClientError
 from datetime import datetime, timezone
@@ -8,6 +8,7 @@ import json
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 # connect to totesys database using the funciton below
 
@@ -88,7 +89,7 @@ def lambda_handler(event, context):
         if new_rows:
             convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, column_names, new_rows)
         
-    update_last_checked() 
+    update_last_checked()
     return {"message":"success", "timestamp_to_transform": last_checked}
 
     
@@ -102,12 +103,22 @@ def get_last_checked(ssm_client): # test and code complete
         dictionary of paramter name and value
         {"last_checked" : "2020...."}
     """
-    response = ssm_client.get_parameter(
-    Name='last_checked',
-    WithDecryption=True
-    )
-    result = {"last_checked": response['Parameter']['Value']}
-    return result
+    
+    try:
+        response = ssm_client.get_parameter(
+        Name='last_checked',
+        WithDecryption=True
+        )
+        result = {"last_checked": response['Parameter']['Value']}
+        return result
+
+    except ssm_client.exceptions.ParameterNotFound as par_not_found_error:
+        logger.error(f"get_last_checked: The parameter was not found: {str(par_not_found_error)}")
+        raise par_not_found_error
+    except ClientError as error:
+        logger.error(f"get_last_checked: There has been an error: {str(error)}")
+        raise error
+    
     
    
 def get_db_credentials(sm_client): # test and code complete
@@ -119,9 +130,17 @@ def get_db_credentials(sm_client): # test and code complete
     dictionary of credentials
     {"DB_USER":"totesys", DB_PASSWORD:".......}
     """
-    response = sm_client.get_secret_value(SecretId = 'db_creds') # do this for all the credentials
-    db_credentials = json.loads(response["SecretString"])
-    return db_credentials
+    try:
+        response = sm_client.get_secret_value(SecretId = 'db_creds') # do this for all the credentials
+        db_credentials = json.loads(response["SecretString"])
+        return db_credentials
+
+    except sm_client.exceptions.ResourceNotFoundException as par_not_found_error:
+        logger.error(f"get_last_checked: The parameter was not found: {str(par_not_found_error)}")
+        raise par_not_found_error
+    except ClientError as error:
+        logger.error(f"get_last_checked: There has been an error: {str(error)}")
+        raise error
 
 
 def create_db_connection(db_credentials): #test and code complete
@@ -133,13 +152,20 @@ def create_db_connection(db_credentials): #test and code complete
 
     Return Connection
     """
-    return Connection(
-        user = db_credentials["DB_USER"],
-        password = db_credentials["DB_PASSWORD"],
-        database = db_credentials["DB_NAME"],
-        host = db_credentials["DB_HOST"],
-        port = db_credentials["DB_PORT"]
-    )
+    try:
+        return Connection(
+            user = db_credentials["DB_USER"],
+            password = db_credentials["DB_PASSWORD"],
+            database = db_credentials["DB_NAME"],
+            host = db_credentials["DB_HOST"],
+            port = db_credentials["DB_PORT"]
+        )
+    except InterfaceError as interface_error:
+        logger.error(f"create_db_connection: cannot connect to database: {interface_error}")
+        raise interface_error
+    except Exception as error:
+        logger.error(f"create_db_connection: there has been an error: {error}")
+        raise error
     
 
 def extract_new_rows(table_name, last_checked, db_connection): 
@@ -158,7 +184,7 @@ def extract_new_rows(table_name, last_checked, db_connection):
         last_checked (datetime object): 
         should be the datetime object store in parameter store
         
-        db_connection:
+        db_connection (object):
         a connection object to the totesys database
     
     
@@ -170,10 +196,21 @@ def extract_new_rows(table_name, last_checked, db_connection):
     """
     
     last_checked_dt_obj = datetime.strptime(last_checked, "%Y-%m-%d %H:%M:%S.%f")
-    
     query = f"""
-    SELECT * FROM {literal(table_name)} WHERE last_updated > {literal(last_checked_dt_obj)}
+    SELECT * FROM {identifier(table_name)} WHERE last_updated > {literal(last_checked_dt_obj)}
     """
+    
+    try:
+        new_rows = db_connection.run(query)
+        column_names = [column['name'] for column in db_connection.columns]
+        return column_names, new_rows
+    except DatabaseError as db_error:
+        logger.error(f"There has been a database error: {str(db_error)}")
+    except Exception as error:
+        logger.error(f"There has been an error: {str(error)}")
+    finally:
+        if db_connection:
+            db_connection.close()
     
 
 

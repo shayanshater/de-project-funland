@@ -1,11 +1,13 @@
-from src.extract import get_db_credentials, get_last_checked, create_db_connection, update_last_checked
+from src.extract import get_db_credentials, get_last_checked, create_db_connection, update_last_checked, extract_new_rows
 import pytest
-from pg8000.native import DatabaseError, InterfaceError
+from pg8000.native import DatabaseError, InterfaceError, Connection
 from moto import mock_aws
 import boto3
 from datetime import datetime
 import json
 from botocore.exceptions import ClientError
+import os
+from dotenv import load_dotenv
 
 
 
@@ -23,9 +25,23 @@ def tables_to_import():
 @pytest.fixture(scope='function')
 def ssm_client():
     return boto3.client('ssm')
+
+
 @pytest.fixture(scope='function')
 def sm_client():
     return boto3.client('secretsmanager')
+
+@pytest.fixture(scope='function')
+def db_conn():
+    load_dotenv()
+    conn = Connection(
+        user = os.getenv("totesys_user"),
+        password = os.getenv("totesys_password"),
+        database = os.getenv("totesys_database"),
+        host = os.getenv("totesys_host"),
+        port = os.getenv("totesys_port")
+    )
+    return conn
 
 
 
@@ -141,8 +157,30 @@ class TestUpdateLastChecked:
         assert datetime.strptime(last_checked,"%Y-%m-%d %H:%M:%S.%f") > datetime.strptime(now,"%Y-%m-%d %H:%M:%S.%f")
     
 
+class TestExtractNewRows:
+    def test_extract_new_rows_returns_all_data(self, db_conn):   
         
-
+        
+        column_names, new_rows  = extract_new_rows("address", "1995-01-01 00:00:00.000000", db_conn)
+        
+        assert len(new_rows) > 0
+        assert len(column_names) == len(new_rows[0])
+        
+    def test_extract_new_rows_returns_no_data(self, db_conn):   
+        
+        
+        column_names, new_rows  = extract_new_rows("address", "2030-01-01 00:00:00.000000", db_conn)
+        
+        assert new_rows == []
+        assert len(column_names) > 0
+        
+    def test_extract_new_rows_returns_some_but_not_all_data(self, db_conn):
+        column_names, new_rows  = extract_new_rows("payment", "2025-06-05 07:55:11.631000", db_conn)
+        
+        
+        print(new_rows)
+        assert len(new_rows) >= 5
+        assert len(column_names) == len(new_rows[0])
 
 
 
