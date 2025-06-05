@@ -1,3 +1,4 @@
+
 from src.extract import lambda_handler, get_db_credentials, get_last_checked, create_db_connection, get_bucket_name
 import pytest
 from pg8000.native import DatabaseError, InterfaceError
@@ -6,8 +7,8 @@ import boto3
 from datetime import datetime
 import json
 import os
+from botocore.exceptions import ClientError
 
-# from botocore.exceptions import ClientError
 
 
 
@@ -155,7 +156,7 @@ class TestGetBucketName:
         expected = {"ingestion_bucket": 'None'}
         #assert
         assert result == expected
-    
+
     @mock_aws
     def test_env_var_matches_bucket_name(self, s3_client): 
         #assign
@@ -188,7 +189,19 @@ class TestGetBucketName:
 
       
             
+@mock_aws
+class TestUpdateLastChecked:
+    def test_update_last_checked_updates(self,ssm_client):
+        now=str(datetime.now())
+        #print(now)
+        ssm_client.put_parameter(
+        Name = "last_checked",
+        Value = now,
+        Type="String")
+        
+        last_checked=update_last_checked(ssm_client)
 
+        assert datetime.strptime(last_checked,"%Y-%m-%d %H:%M:%S.%f") > datetime.strptime(now,"%Y-%m-%d %H:%M:%S.%f")
         
         
         

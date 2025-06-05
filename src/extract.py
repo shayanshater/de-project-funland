@@ -171,6 +171,13 @@ def extract_new_rows(table_name, last_checked, db_connection):
         
         returns a tuple of (column_names, new_rows):
     """
+    
+    last_checked_dt_obj = datetime.strptime(last_checked, "%Y-%m-%d %H:%M:%S.%f")
+    
+    query = f"""
+    SELECT * FROM {literal(table_name)} WHERE last_updated > {literal(last_checked_dt_obj)}
+    """
+    
 
 
 def convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, column_names, new_rows):
@@ -205,7 +212,7 @@ def convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, colu
         all_new_tables_data[table] = formatted_table_data
 
     
-def update_last_checked():
+def update_last_checked(ssm_client):
     """
     Summary:
     Initialise ssm_client using boto3.client("ssm")
@@ -214,16 +221,20 @@ def update_last_checked():
     the last_checked time each time extract_lambda_handler is run.
             
     """
-    ssm_client = boto3.client("ssm")
-    last_checked = ssm_client.put_parameter(
-        Name = param_name,
-        Value = timestamp, #change the name as appropriate
-        Description='Timestamp of each Lambda execution',
-        Type="String",
-        Overwrite=True
-    )
-    return last_checked # consider what is the best output of this function.
-    
+
+    now=str(datetime.now())
+
+    try:
+        last_checked = ssm_client.put_parameter(
+            Name = "last_checked",
+            Value = now, #change the name as appropriate
+            Description='Timestamp of each Lambda execution',
+            Type="String",
+            Overwrite=True
+        )
+        return now # consider what is the best output of this function.
+    except Exception as e:
+        raise {str(e)}
 
 
     
