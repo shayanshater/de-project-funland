@@ -126,9 +126,8 @@ class TestGetDataFromDB:
             assert expect == [[True]]
 
 
-
+@mock_aws
 class TestUpdateLastChecked:
-    @mock_aws
     def test_update_last_checked_updates(self,ssm_client):
         now=str(datetime.now())
         #print(now)

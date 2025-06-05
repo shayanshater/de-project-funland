@@ -168,6 +168,13 @@ def extract_new_rows(table_name, last_checked, db_connection):
         
         returns a tuple of (column_names, new_rows):
     """
+    
+    last_checked_dt_obj = datetime.strptime(last_checked, "%Y-%m-%d %H:%M:%S.%f")
+    
+    query = f"""
+    SELECT * FROM {literal(table_name)} WHERE last_updated > {literal(last_checked_dt_obj)}
+    """
+    
 
 
 def convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, column_names, new_rows):
