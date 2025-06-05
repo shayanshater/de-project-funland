@@ -11,7 +11,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-# connect to totesys database using the funciton below
+##################################################################################
+# Lambda Handler
+##################################################################################
+    
 
 def lambda_handler(event, context):
     """ summary
@@ -290,8 +293,6 @@ def get_bucket_name(): #completed with tests
     """
 
     bucket_name = os.environ.get("S3_INGESTION_BUCKET")
-    print(bucket_name)
-     
     return {"ingestion_bucket":f'{bucket_name}'}
 
 
