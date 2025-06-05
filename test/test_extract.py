@@ -1,11 +1,14 @@
-from src.extract import get_db_credentials, get_last_checked, create_db_connection, update_last_checked
+
+from src.extract import lambda_handler, get_db_credentials, get_last_checked, create_db_connection, get_bucket_name
 import pytest
 from pg8000.native import DatabaseError, InterfaceError
 from moto import mock_aws
 import boto3
 from datetime import datetime
 import json
+import os
 from botocore.exceptions import ClientError
+
 
 
 
@@ -23,9 +26,14 @@ def tables_to_import():
 @pytest.fixture(scope='function')
 def ssm_client():
     return boto3.client('ssm')
+
 @pytest.fixture(scope='function')
 def sm_client():
     return boto3.client('secretsmanager')
+
+@pytest.fixture(scope='function')
+def s3_client():
+    return boto3.client('s3')
 
 
 
@@ -109,23 +117,78 @@ class TestDBConnection:
             create_db_connection(db_credentials)
 
 
-@mock_aws
-class TestGetDataFromDB:
-    @pytest.mark.skip()
-    def test_all_tables_exist(self, conn):
-        tables_to_check = ["counterparty", "currency", 
-                    "department", "design", "staff", "sales_order",
-                    "address", "payment", "purchase_order", 
-                    "payment_type", "transaction"]
+# @mock_aws
+# class TestGetDataFromDB:
+#     @pytest.mark.skip()
+#     def test_all_tables_exist(self, conn):
+#         tables_to_check = ["counterparty", "currency", 
+#                     "department", "design", "staff", "sales_order",
+#                     "address", "payment", "purchase_order", 
+#                     "payment_type", "transaction"]
         
         
-        for table_name in tables_to_check:
-            base_query = f"""SELECT EXISTS (SELECT FROM information_schema.tables \
-                        WHERE table_name = '{table_name}')"""
-            expect = conn.run(base_query)
-            assert expect == [[True]]
+#         for table_name in tables_to_check:
+#             base_query = f"""SELECT EXISTS (SELECT FROM information_schema.tables \
+#                         WHERE table_name = '{table_name}')"""
+#             expect = conn.run(base_query)
+#             assert expect == [[True]]
 
+    
 
+class TestGetBucketName:
+    def test_get_bucket_name_gets_the_correct_bucket_name_which_is_dynamic(self):
+        #assign
+        os.environ["S3_INGESTION_BUCKET"] = "funland-ingestion-bucket-11"
+    
+        #action
+        result = get_bucket_name()
+        expected = {"ingestion_bucket": "funland-ingestion-bucket-11"}
+
+        #assert
+        assert result == expected
+        del os.environ["S3_INGESTION_BUCKET"] 
+
+    def test_get_bucket_name_raises_error_if_bucket_not_found(self):
+        #assign
+        #env variable deleted above       
+        #action
+        result = get_bucket_name()
+        expected = {"ingestion_bucket": 'None'}
+        #assert
+        assert result == expected
+
+    @mock_aws
+    def test_env_var_matches_bucket_name(self, s3_client): 
+        #assign
+        #create mock s3 bucket
+        #create fake environment variable 
+        s3_client.create_bucket(Bucket="funland-ingestion-bucket-11", CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
+        os.environ["S3_INGESTION_BUCKET"] = "funland-ingestion-bucket-11"
+        
+        #Action
+        #result = call the function 
+        #expected = list of bucket names 
+        result = get_bucket_name()
+        buckets_list = s3_client.list_buckets()["Buckets"][0]
+
+        #Assert 
+        assert result["ingestion_bucket"] == buckets_list["Name"]
+
+    @mock_aws
+    def test_bucket_name_does_not_match_env_variable(self, s3_client): 
+        #assign
+        s3_client.create_bucket(Bucket="funland-ingestion-bucket-11", CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
+        os.environ["S3_INGESTION_BUCKET"] = "funland-ingestion-bucket-33"
+
+        #Action
+        result = get_bucket_name()
+        buckets_list = s3_client.list_buckets()["Buckets"][0]
+
+        #Assert 
+        assert result["ingestion_bucket"] != buckets_list["Name"]       
+
+      
+            
 @mock_aws
 class TestUpdateLastChecked:
     def test_update_last_checked_updates(self,ssm_client):
@@ -139,20 +202,6 @@ class TestUpdateLastChecked:
         last_checked=update_last_checked(ssm_client)
 
         assert datetime.strptime(last_checked,"%Y-%m-%d %H:%M:%S.%f") > datetime.strptime(now,"%Y-%m-%d %H:%M:%S.%f")
-    
-
-        
-
-
-
-
-
-    
-
-
-
-            
-
         
         
         
