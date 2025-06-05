@@ -18,3 +18,9 @@ resource "aws_s3_bucket" "processed_bucket" {
     Environment="dev"
   }
 }
+
+
+resource "aws_s3_bucket" "layer_bucket"{
+  bucket_prefix = "layer-bucket-"
+  
+}

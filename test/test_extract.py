@@ -1,5 +1,5 @@
 
-from src.extract import get_db_credentials, get_last_checked, create_db_connection, update_last_checked, extract_new_rows, convert_new_rows_to_df_and_upload_to_s3_as_csv
+from src.lambda_handler.extract import get_db_credentials, get_last_checked, create_db_connection, update_last_checked, extract_new_rows, convert_new_rows_to_df_and_upload_to_s3_as_csv,get_bucket_name
 
 import pytest
 from pg8000.native import DatabaseError, InterfaceError, Connection
@@ -37,7 +37,7 @@ def ssm_client():
 def sm_client():
     return boto3.client('secretsmanager')
 
-@pytest.fixture(scope='function'
+@pytest.fixture(scope='function')
 def db_conn():
     load_dotenv()
     conn = Connection(

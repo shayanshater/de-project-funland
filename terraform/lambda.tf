@@ -13,16 +13,26 @@ data "archive_file" "lambda_layer" {
   output_path      = "${path.module}/../dependencies/layers/lambda_handlers_layer.zip"
 }
 
+
+
+
+resource "aws_s3_object" "lambda_zip_file"{
+  bucket = aws_s3_bucket.layer_bucket.bucket
+  key    = "extract_layer"
+  source = data.archive_file.lambda.output_path
+}
+
 # creating the lambda layer
 resource "aws_lambda_layer_version" "lambda_layer" {
   # provisioner "local-exec" {
-  #   command = "pip install -r ../lambda_packages.txt -t dependencies/packages/"
-  #   }
-
+  # command = "pip install pandas -t dependencies/packages/pandas/"
+  #"pip install pg8000 -t dependencies/packages/pg8000/"
+  #"pip install awswrangler -t dependencies/packages/awswrangler/"
+  # }
   layer_name          = "etl_layer"
-  filename = data.archive_file.lambda_layer.output_path
-  source_code_hash    = data.archive_file.lambda_layer.output_base64sha256
   compatible_runtimes = [var.python_runtime]
+  s3_bucket = aws_s3_object.lambda_zip_file.bucket
+  s3_key = aws_s3_object.lambda_zip_file.key
 }
 
 
@@ -37,7 +47,7 @@ resource "aws_lambda_function" "extract_lambda_handler" {
   runtime       = var.python_runtime
 
   source_code_hash = data.archive_file.lambda.output_base64sha256
-  layers = [aws_lambda_layer_version.lambda_layer.arn]
+  layers = [aws_lambda_layer_version.lambda_layer.arn, "arn:aws:lambda:eu-west-2:336392948345:layer:AWSSDKPandas-Python312:17"]
   environment {
     variables = {
       S3_INGESTION_BUCKET = aws_s3_bucket.ingestion_bucket.bucket

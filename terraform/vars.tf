@@ -27,7 +27,7 @@ variable "lambda_load" {
 
 variable "python_runtime" {
   type    = string
-  default = "python3.13"
+  default = "python3.12"
 }
 
 variable "step_function" {
@@ -42,6 +42,7 @@ variable "scheduler" {
 
 variable "notification_email" {
   description = "Email address to receive Lambda failure notifications"
+  default = "shayanshaterpoori@outlook.com"
   type        = string
 }
 

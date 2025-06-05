@@ -10,18 +10,21 @@ resource "aws_sfn_state_machine" "sfn_state_machine" {
       "Type": "Task",
       "Resource": "${aws_lambda_function.extract_lambda_handler.arn}",
       "Next": "Transform",
+      "TimeoutSeconds": 300,
       "ResultPath": "$.myresult"
     },
     "Transform": {
       "Type": "Task",
       "Resource": "${aws_lambda_function.transform_lambda_handler.arn}",
       "Next": "Load",
+      "TimeoutSeconds": 300,
       "ResultPath": "$.myresult"
     },
     "Load": {
       "Type": "Task",
       "Resource": "${aws_lambda_function.load_lambda_handler.arn}",
       "ResultPath": "$.myresult",
+      "TimeoutSeconds": 300,
       "End": true
     }
     }
