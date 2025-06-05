@@ -214,7 +214,7 @@ def extract_new_rows(table_name, last_checked, db_connection):
     
 
 
-def convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, column_names, new_rows):
+def convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, column_names, new_rows,last_checked):
     """
     Summary:
     This function will take the column names and new row data, 
@@ -246,6 +246,18 @@ def convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, colu
         all_new_tables_data[table] = formatted_table_data
 
     
+    #convert new rows to a dataframe
+    df = pd.DataFrame(column_names,new_rows)
+    #convert dataframe to a csv file
+    # df = pd.DataFrame(header,values)
+    wr.s3.to_csv(df, f"s3://{ingestion_bucket}/{table}/{last_checked}.csv")
+
+
+    #df_read = wr.s3.read_csv("s3://s-o-s3-bucket-prefix-20250520143017315000000001/project_test_with_wrangler.csv")
+    #print(type(df_read))
+    
+
+    
 def update_last_checked(ssm_client):
     """
     Summary:
@@ -268,7 +280,9 @@ def update_last_checked(ssm_client):
         )
         return now # consider what is the best output of this function.
     except Exception as e:
-        raise {str(e)}
+        logger.error(f"There has been an error: {str(e)}")
+        raise e
+    
 
 
     

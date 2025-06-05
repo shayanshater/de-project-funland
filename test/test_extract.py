@@ -43,6 +43,10 @@ def db_conn():
     )
     return conn
 
+@pytest.fixture(scope='function')
+def s3_client():
+    return boto3.client('s3')
+
 
 
 @mock_aws
@@ -156,6 +160,17 @@ class TestUpdateLastChecked:
 
         assert datetime.strptime(last_checked,"%Y-%m-%d %H:%M:%S.%f") > datetime.strptime(now,"%Y-%m-%d %H:%M:%S.%f")
     
+    # def test_update_last_checked_update_raisese_an_error(self,ssm_client):
+        
+    #     now=str(datetime.now())
+    #     ssm_client.put_parameter(
+    #     Name = "last_checked",
+    #     Value =now,
+    #     Type="String")
+        
+    #     with pytest.raises(Exception) as e:
+    #          update_last_checked(ssm_client)
+
 
 class TestExtractNewRows:
     def test_extract_new_rows_returns_all_data(self, db_conn):   
@@ -181,6 +196,19 @@ class TestExtractNewRows:
         print(new_rows)
         assert len(new_rows) >= 5
         assert len(column_names) == len(new_rows[0])
+
+@mock_aws  
+class TestConvertNewRowsToDfAndUploadToS3:
+    def test_function_convert_new_rows_to_dataframe(self,s3_client):
+    
+    column_names, new_rows  = extract_new_rows("address", "2020-01-01 00:00:00.000000", db_conn)  
+    bucket="test-bucket"
+    last_checked="2020-01-01 00:00:00.000000"
+
+    convert_new_rows_to_df_and_upload_to_s3_as_csv(bucket,"address",column_names,new_rows,last_checked)
+    assert {ingestion_bucket}/{table}/{last_checked}.csv
+    assert df_read = wr.s3.read_csv("s3://s-o-s3-bucket-prefix-20250520143017315000000001/project_test_with_wrangler.csv")
+
 
 
 
