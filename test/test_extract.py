@@ -1,4 +1,4 @@
-from src.extract import get_db_credentials, get_last_checked, create_db_connection, update_last_checked, extract_new_rows
+from src.extract import get_db_credentials, get_last_checked, create_db_connection, update_last_checked, extract_new_rows, convert_new_rows_to_df_and_upload_to_s3_as_csv
 import pytest
 from pg8000.native import DatabaseError, InterfaceError, Connection
 from moto import mock_aws
@@ -8,6 +8,9 @@ import json
 from botocore.exceptions import ClientError
 import os
 from dotenv import load_dotenv
+import awswrangler as wr
+import pandas as pd
+from awswrangler import exceptions
 
 
 
@@ -193,7 +196,7 @@ class TestExtractNewRows:
         column_names, new_rows  = extract_new_rows("payment", "2025-06-05 07:55:11.631000", db_conn)
         
         
-        print(new_rows)
+        #print(new_rows)
         assert len(new_rows) >= 5
         assert len(column_names) == len(new_rows[0])
 
@@ -201,13 +204,38 @@ class TestExtractNewRows:
 class TestConvertNewRowsToDfAndUploadToS3:
     def test_function_convert_new_rows_to_dataframe(self,s3_client):
     
-    column_names, new_rows  = extract_new_rows("address", "2020-01-01 00:00:00.000000", db_conn)  
-    bucket="test-bucket"
-    last_checked="2020-01-01 00:00:00.000000"
+        s3_client.create_bucket(
+            Bucket='testbucket',
+            CreateBucketConfiguration={
+                'LocationConstraint': 'eu-west-2'
+                }
+            )
+        column_names=['age','height']
+        new_rows=[[18,192.0], [33,177.4]]
+        last_checked="2020-01-01 00:00:00.000000"
 
-    convert_new_rows_to_df_and_upload_to_s3_as_csv(bucket,"address",column_names,new_rows,last_checked)
-    assert {ingestion_bucket}/{table}/{last_checked}.csv
-    assert df_read = wr.s3.read_csv("s3://s-o-s3-bucket-prefix-20250520143017315000000001/project_test_with_wrangler.csv")
+        convert_new_rows_to_df_and_upload_to_s3_as_csv("testbucket","person",column_names,new_rows,last_checked)
+    
+    
+        df_read = wr.s3.read_csv(f"s3://testbucket/person/{last_checked}.csv")
+        df_read=df_read.drop("Unnamed: 0", axis=1) 
+        #print(df_read.columns)
+        assert list(df_read.columns.values)==['age','height']
+
+    def test_function_gives_a_error(self,s3_client):
+        s3_client.create_bucket(
+            Bucket='testbucket',
+            CreateBucketConfiguration={
+                'LocationConstraint': 'eu-west-2'
+                }
+            )
+        column_names=['age','height']
+        new_rows=[[18,192.0], [33,177.4]]
+        last_checked="2020-01-01 00:00:00.000000"
+        with pytest.raises(Exception):
+            convert_new_rows_to_df_and_upload_to_s3_as_csv("testingbucket","person",column_names,new_rows,last_checked)
+
+
 
 
 
