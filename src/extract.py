@@ -84,6 +84,7 @@ def lambda_handler(event, context):
     
     
     ingestion_bucket = obtain_bucket_name()["ingestion_bucket"]
+
     
     for table in tables_to_import:
         column_names, new_rows = extract_new_rows(table, last_checked, db_conn)
@@ -133,6 +134,7 @@ def get_db_credentials(sm_client): # test and code complete
     Returns:
     dictionary of credentials
     {"DB_USER":"totesys", DB_PASSWORD:".......}
+
     """
     try:
         response = sm_client.get_secret_value(SecretId = 'db_creds')
@@ -276,16 +278,22 @@ def update_last_checked(ssm_client):
 
 
     
-def obtain_bucket_name():
+def get_bucket_name(): #completed with tests
     """
     Summary : this function should obtain the ingestion bucket name from the
     environment variables and return it.
     
     
     Returns:
-    dict {"ingestion_bucket" : "funland-project-......."}
+    dict {"ingestion_bucket" : "funland-ingestion-bucket-......."}
     
     """
+
+    bucket_name = os.environ.get("S3_INGESTION_BUCKET")
+    print(bucket_name)
+     
+    return {"ingestion_bucket":f'{bucket_name}'}
+
 
 
 
