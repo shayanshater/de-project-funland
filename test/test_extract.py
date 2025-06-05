@@ -1,10 +1,12 @@
-from src.extract import get_db_credentials, get_last_checked, create_db_connection, get_bucket_name
+from src.extract import lambda_handler, get_db_credentials, get_last_checked, create_db_connection, get_bucket_name
 import pytest
 from pg8000.native import DatabaseError, InterfaceError
 from moto import mock_aws
 import boto3
 from datetime import datetime
 import json
+import os
+
 # from botocore.exceptions import ClientError
 
 
@@ -131,59 +133,60 @@ class TestDBConnection:
 #             assert expect == [[True]]
 
     
-@mock_aws
+
 class TestGetBucketName:
-    def test_get_bucket_name_gets_the_correct_bucket_name_which_is_dynamic(self, s3_client):
+    def test_get_bucket_name_gets_the_correct_bucket_name_which_is_dynamic(self):
         #assign
-
-        buckets_list = [
-            {'Name': 'funland-ingestion-bucket-20250604125203238900000004',
-             'CreationDate': datetime.datetime(2025, 6, 4, 12, 52, 5, tzinfo=tzutc())
-             }         
-        ]
-
-        s3_client. #creat s3 buckets and use our func to see if it can
-        #retreive these newly created mock buckets!
-        # the buckets_list provided above (line 139) - does it serve the same purpose as
-        #creating mock buckets using s3 client in line 145?
-
-
-
+        os.environ["S3_INGESTION_BUCKET"] = "funland-ingestion-bucket-11"
+    
         #action
         result = get_bucket_name()
-        expected = {"ingestion_bucket": 'funland-ingestion-bucket-20250604125203238900000004'}
+        expected = {"ingestion_bucket": "funland-ingestion-bucket-11"}
 
         #assert
         assert result == expected
+        del os.environ["S3_INGESTION_BUCKET"] 
 
-
-        # secret_string = json.dumps(secret_dict)
-                
-        # sm_client.create_secret(
-        #     Name = "db_creds",
-        #     SecretString = secret_string
-        #     )
-        
-        # #action
-        # result = get_db_credentials(sm_client)
-
-        # #assert
-        # assert result == secret_dict
-
-
-    
-    def test_get_bucket_name_raises_error_if_bucket_not_found(self, s3_client):
-        
+    def test_get_bucket_name_raises_error_if_bucket_not_found(self):
         #assign
-        expected = "Ingestion Bucket does not exist!"
-        
+        #env variable deleted above       
         #action
         result = get_bucket_name()
-        
+        expected = {"ingestion_bucket": 'None'}
         #assert
         assert result == expected
     
+    @mock_aws
+    def test_env_var_matches_bucket_name(self, s3_client): 
+        #assign
+        #create mock s3 bucket
+        #create fake environment variable 
+        s3_client.create_bucket(Bucket="funland-ingestion-bucket-11", CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
+        os.environ["S3_INGESTION_BUCKET"] = "funland-ingestion-bucket-11"
+        
+        #Action
+        #result = call the function 
+        #expected = list of bucket names 
+        result = get_bucket_name()
+        buckets_list = s3_client.list_buckets()["Buckets"][0]
 
+        #Assert 
+        assert result["ingestion_bucket"] == buckets_list["Name"]
+
+    @mock_aws
+    def test_bucket_name_does_not_match_env_variable(self, s3_client): 
+        #assign
+        s3_client.create_bucket(Bucket="funland-ingestion-bucket-11", CreateBucketConfiguration={'LocationConstraint': 'eu-west-2'})
+        os.environ["S3_INGESTION_BUCKET"] = "funland-ingestion-bucket-33"
+
+        #Action
+        result = get_bucket_name()
+        buckets_list = s3_client.list_buckets()["Buckets"][0]
+
+        #Assert 
+        assert result["ingestion_bucket"] != buckets_list["Name"]       
+
+      
             
 
         

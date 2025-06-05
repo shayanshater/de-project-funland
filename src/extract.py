@@ -9,6 +9,7 @@ import json
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 # connect to totesys database using the funciton below
 
 def lambda_handler(event, context):
@@ -82,6 +83,8 @@ def lambda_handler(event, context):
     
     
     ingestion_bucket = get_bucket_name()
+    # ingestion_bucket = os.environ.get("S3_INGESTION_BUCKET")
+    # print(ingestion_bucket)
     
     for table in tables_to_import:
         column_names, new_rows = extract_new_rows(table, last_checked, db_conn)
@@ -234,16 +237,11 @@ def get_bucket_name():
     dict {"ingestion_bucket" : "funland-ingestion-bucket-......."}
     
     """
-    s3_client = boto3.client("s3")
-    buckets_list = s3_client.list_buckets()["Buckets"]
-    print(buckets_list)
-    for bucket in buckets_list:
-        print(bucket)
-        if "funland-ingestion-bucket-" in bucket["Name"]:
-        # if bucket["Name"].startswith("funland-ingestion-bucket-"):
-            return {"ingestion_bucket":f'{bucket["Name"]}'}
-        else:
-            return "Ingestion Bucket does not exist!"
+
+    bucket_name = os.environ.get("S3_INGESTION_BUCKET")
+    print(bucket_name)
+     
+    return {"ingestion_bucket":f'{bucket_name}'}
 
 
 
