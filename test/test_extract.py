@@ -1,5 +1,5 @@
 
-from src.extract import lambda_handler, get_db_credentials, get_last_checked, create_db_connection, get_bucket_name
+from src.extract import get_db_credentials, get_last_checked, create_db_connection, get_bucket_name
 import pytest
 from pg8000.native import DatabaseError, InterfaceError
 from moto import mock_aws

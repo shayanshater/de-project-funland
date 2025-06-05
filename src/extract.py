@@ -121,7 +121,7 @@ def get_db_credentials(sm_client): # test and code complete
     Returns:
     dictionary of credentials
     {"DB_USER":"totesys", DB_PASSWORD:".......}
-    """
+    # """
     response = sm_client.get_secret_value(SecretId = 'db_creds') # do this for all the credentials
     db_credentials = json.loads(response["SecretString"])
     return db_credentials
@@ -238,7 +238,7 @@ def update_last_checked(ssm_client):
 
 
     
-def get_bucket_name():
+def get_bucket_name(): #completed with tests
     """
     Summary : this function should obtain the ingestion bucket name from the
     environment variables and return it.
