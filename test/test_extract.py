@@ -1,13 +1,19 @@
 
-from src.extract import get_db_credentials, get_last_checked, create_db_connection, get_bucket_name
+from src.extract import get_db_credentials, get_last_checked, create_db_connection, update_last_checked, extract_new_rows, convert_new_rows_to_df_and_upload_to_s3_as_csv
+
 import pytest
-from pg8000.native import DatabaseError, InterfaceError
+from pg8000.native import DatabaseError, InterfaceError, Connection
 from moto import mock_aws
 import boto3
 from datetime import datetime
 import json
 import os
 from botocore.exceptions import ClientError
+import os
+from dotenv import load_dotenv
+import awswrangler as wr
+import pandas as pd
+from awswrangler import exceptions
 
 
 
@@ -31,7 +37,20 @@ def ssm_client():
 def sm_client():
     return boto3.client('secretsmanager')
 
+@pytest.fixture(scope='function'
+def db_conn():
+    load_dotenv()
+    conn = Connection(
+        user = os.getenv("totesys_user"),
+        password = os.getenv("totesys_password"),
+        database = os.getenv("totesys_database"),
+        host = os.getenv("totesys_host"),
+        port = os.getenv("totesys_port")
+    )
+    return conn
+
 @pytest.fixture(scope='function')
+
 def s3_client():
     return boto3.client('s3')
 
@@ -202,7 +221,82 @@ class TestUpdateLastChecked:
         last_checked=update_last_checked(ssm_client)
 
         assert datetime.strptime(last_checked,"%Y-%m-%d %H:%M:%S.%f") > datetime.strptime(now,"%Y-%m-%d %H:%M:%S.%f")
+   
+
+
+class TestExtractNewRows:
+    def test_extract_new_rows_returns_all_data(self, db_conn):   
         
+        
+        column_names, new_rows  = extract_new_rows("address", "1995-01-01 00:00:00.000000", db_conn)
+        
+        assert len(new_rows) > 0
+        assert len(column_names) == len(new_rows[0])
+        
+    def test_extract_new_rows_returns_no_data(self, db_conn):   
+        
+        
+        column_names, new_rows  = extract_new_rows("address", "2030-01-01 00:00:00.000000", db_conn)
+        
+        assert new_rows == []
+        assert len(column_names) > 0
+        
+    def test_extract_new_rows_returns_some_but_not_all_data(self, db_conn):
+        column_names, new_rows  = extract_new_rows("payment", "2025-06-05 07:55:11.631000", db_conn)
+        
+        
+        #print(new_rows)
+        assert len(new_rows) >= 5
+        assert len(column_names) == len(new_rows[0])
+
+@mock_aws  
+class TestConvertNewRowsToDfAndUploadToS3:
+    def test_function_convert_new_rows_to_dataframe(self,s3_client):
+    
+        s3_client.create_bucket(
+            Bucket='testbucket',
+            CreateBucketConfiguration={
+                'LocationConstraint': 'eu-west-2'
+                }
+            )
+        column_names=['age','height']
+        new_rows=[[18,192.0], [33,177.4]]
+        last_checked="2020-01-01 00:00:00.000000"
+
+        convert_new_rows_to_df_and_upload_to_s3_as_csv("testbucket","person",column_names,new_rows,last_checked)
+    
+    
+        df_read = wr.s3.read_csv(f"s3://testbucket/person/{last_checked}.csv")
+        df_read=df_read.drop("Unnamed: 0", axis=1) 
+        #print(df_read.columns)
+        assert list(df_read.columns.values)==['age','height']
+
+    def test_function_gives_a_error(self,s3_client):
+        s3_client.create_bucket(
+            Bucket='testbucket',
+            CreateBucketConfiguration={
+                'LocationConstraint': 'eu-west-2'
+                }
+            )
+        column_names=['age','height']
+        new_rows=[[18,192.0], [33,177.4]]
+        last_checked="2020-01-01 00:00:00.000000"
+        with pytest.raises(Exception):
+            convert_new_rows_to_df_and_upload_to_s3_as_csv("testingbucket","person",column_names,new_rows,last_checked)
+
+
+
+
+
+
+
+    
+
+
+
+            
+
+   
         
         
         
