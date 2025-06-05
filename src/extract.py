@@ -86,7 +86,7 @@ def lambda_handler(event, context):
                     "payment_type", "transaction"]
     
     
-    ingestion_bucket = obtain_bucket_name()["ingestion_bucket"]
+    ingestion_bucket = get_bucket_name()["ingestion_bucket"]
 
     
     for table in tables_to_import:
