@@ -1,4 +1,4 @@
-from extract import get_db_credentials, get_last_checked, create_db_connection, update_last_checked, extract_new_rows, convert_new_rows_to_df_and_upload_to_s3_as_csv,get_bucket_name,lambda_handler
+from src.lambda_handler.extract import get_db_credentials, get_last_checked, create_db_connection, update_last_checked, extract_new_rows, convert_new_rows_to_df_and_upload_to_s3_as_csv,get_bucket_name,lambda_handler
 
 import os
 import logging
@@ -35,11 +35,11 @@ tables_to_import = ["transaction", "sales_order",
                         "payment_type"]
     
 table=tables_to_import[5]
-#ingestion_bucket = get_bucket_name()["ingestion_bucket"]
+ingestion_bucket = get_bucket_name()["ingestion_bucket"]
 
 #print(ingestion_bucket)
 
-def dim_currency(ingestion_bucket,table,last_checked):
+def dim_currency(ingestion_bucket,table,last_checked,processed_bucket):
 
     """
     We will read the csv file for the currency table from the s3 ingestion bucket using awswrangler.
@@ -65,14 +65,14 @@ def dim_currency(ingestion_bucket,table,last_checked):
     #dropping the columns that we dont need
     df_dim_currency=df_read.drop(["Unnamed: 0", "created_at", "last_updated"], axis=1)
 
-    #we have to add a new column=currency_name
-    df_dim_currency['currency_name']=....
-
+    #we have to add a new column(currency_name)
+    df_dim_currency=df_dim_currency.assign(currency_name=lambda x: x['currency_code'] + '_Name')
+    
+    print(df_dim_currency)
     #upload to s3 as a parquet file
     wr.s3.to_parquet(df_dim_currency,f"s3://{processed_bucket}/{table}/{last_checked}.parquet")   #need processed bucket as a argument as well
 
 
-dim_currency(ingestion_bucket,table,last_checked)
 
     
 
