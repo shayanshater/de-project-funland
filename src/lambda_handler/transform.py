@@ -2,11 +2,9 @@ from extract import get_db_credentials, get_last_checked, create_db_connection, 
 
 import os
 import logging
-from pg8000.native import Connection, identifier, literal, DatabaseError, InterfaceError
 import boto3
 from botocore.exceptions import ClientError
 from datetime import datetime, timezone
-import json
 import pandas as pd
 import awswrangler as wr
 
@@ -23,9 +21,7 @@ def lambda_handler_transform(event, context):
     Returns:
         _type_: _description_
     """
-    
-
-    return 'transformed'
+    pass
 
 
 ssm_client=boto3.client('ssm')
@@ -61,15 +57,20 @@ def dim_currency(ingestion_bucket,table,last_checked):
     #reading the csv file
 
     #df_read = wr.s3.read_csv("s3://s-o-s3-bucket-prefix-20250520143017315000000001/project_test_with_wrangler.csv")
-    df_read = wr.s3.read_csv(f"s3://{bucket}/{table}/{last_checked}.csv")
+    df_currency = wr.s3.read_csv(f"s3://{ingestion_bucket}/{table}/{last_checked}.csv")
     
     #columns_currency=[currency_id, currency_code, created_at, last_updated]
     #columns_dim_currency=[currency_id, currency_code, currency_name]
 
     #dropping the columns that we dont need
-    df=df_read.drop("Unnamed: 0", "created_at", "last_updated", axis=3)
+    df_dim_currency=df_read.drop(["Unnamed: 0", "created_at", "last_updated"], axis=1)
 
     #we have to add a new column=currency_name
+    df_dim_currency['currency_name']=....
+
+    #upload to s3 as a parquet file
+    wr.s3.to_parquet(df_dim_currency,f"s3://{processed_bucket}/{table}/{last_checked}.parquet")   #need processed bucket as a argument as well
+
 
 dim_currency(ingestion_bucket,table,last_checked)
 
