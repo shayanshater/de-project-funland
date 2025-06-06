@@ -45,6 +45,8 @@ resource "aws_lambda_function" "extract_lambda_handler" {
   role          = aws_iam_role.lambda_role.arn
   handler       = "extract.lambda_handler"  
   runtime       = var.python_runtime
+  timeout       = 900
+  memory_size   = 3000
 
   source_code_hash = data.archive_file.lambda.output_base64sha256
   layers = [aws_lambda_layer_version.lambda_layer.arn, "arn:aws:lambda:eu-west-2:336392948345:layer:AWSSDKPandas-Python312:17"]

@@ -40,9 +40,8 @@ variable "scheduler" {
   default = "funland-etl-schedule"  
 }
 
-variable "notification_email" {
+variable "notification_email" { # TODO: figure our how to use .tfvars
   description = "Email address to receive Lambda failure notifications"
-  default = "shayanshaterpoori@outlook.com"
   type        = string
 }
 

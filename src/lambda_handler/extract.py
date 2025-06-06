@@ -78,24 +78,42 @@ def lambda_handler(event, context):
     """
     ssm_client=boto3.client("ssm")
     sm_client=boto3.client("secretsmanager")
-    last_checked = get_last_checked(ssm_client)["last_checked"]
-    db_credentials = get_db_credentials(sm_client)
-    db_conn = create_db_connection(db_credentials)
+    logger.info("created s3 clients")
     
-    tables_to_import = ["counterparty", "currency", "department", "design", "staff",
-                    "sales_order", "address", "payment", "purchase_order",
-                    "payment_type", "transaction"]
+    last_checked = get_last_checked(ssm_client)["last_checked"]
+    logger.info(f"obtained last checked: {last_checked}")
+    
+    
+    db_credentials = get_db_credentials(sm_client)
+    logger.info(f"obtained last checked: {db_credentials}")
+    
+    
+    db_conn = create_db_connection(db_credentials)
+    logger.info(f"created db connection")
+    
+    tables_to_import = ["transaction", "sales_order", 
+                        "payment","counterparty", 
+                        "currency", "department", 
+                        "design", "staff",
+                        "address", "purchase_order",
+                        "payment_type"]
     
     
     ingestion_bucket = get_bucket_name()["ingestion_bucket"]
+    logger.info(f"obtained ingestion bucket name: {ingestion_bucket}")
 
     
     for table in tables_to_import:
         column_names, new_rows = extract_new_rows(table, last_checked, db_conn)
+        logger.info(f"obtained new rows for {table}")
         if new_rows:
             convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, column_names, new_rows,last_checked)
+            logger.info(f"uploaded csv file for {table} to s3")
+    db_conn.close()
+    logger.info(f"db connection closed")
     
-    update_last_checked(ssm_client)
+    new_time = update_last_checked(ssm_client)
+    logger.info(f"last checked time updated:  {new_time}")
     return {"message":"success", "timestamp_to_transform": last_checked}
 
 ##################################################################################
@@ -218,9 +236,7 @@ def extract_new_rows(table_name, last_checked, db_connection):
         logger.error(f"There has been a database error: {str(db_error)}")
     except Exception as error:
         logger.error(f"There has been an error: {str(error)}")
-    finally:
-        if db_connection:
-            db_connection.close()
+
     
 
 
@@ -246,9 +262,11 @@ def convert_new_rows_to_df_and_upload_to_s3_as_csv(ingestion_bucket, table, colu
     
     #convert new rows to a dataframe
     df = pd.DataFrame(new_rows,columns=column_names)
+    logger.info(f"dataframe for {table} has been created")
     #convert dataframe to a csv file
     try:
         wr.s3.to_csv(df, f"s3://{ingestion_bucket}/{table}/{last_checked}.csv")
+        logger.info(f"{table} has been saved to s3://{ingestion_bucket}/{table}/{last_checked}.csv")
     except Exception as error:
         logger.errorr(f"convert_new_rows_to_df_and_upload_to_s3_as_csv: There has been a dataframe error: {str(error)}")
         raise error
@@ -267,7 +285,7 @@ def update_last_checked(ssm_client):
     now=str(datetime.now())
 
     try:
-        last_checked = ssm_client.put_parameter(
+        ssm_client.put_parameter(
             Name = "last_checked",
             Value = now,
             Description='Timestamp of each Lambda execution',
