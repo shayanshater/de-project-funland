@@ -1,4 +1,4 @@
-from src.lambda_handler.transform import dim_design
+from src.lambda_handler.transform import dim_design, check_file_exists_in_ingestion_bucket
 import pytest
 import boto3
 import awswrangler as wr
@@ -67,6 +67,40 @@ class TestDimDesignFunction:
         # assert len(df_expected.values[0]) == len(df_result.values[0])
         # assert all([a == b for a, b in zip(df_result.values[0], df_expected.values[0])])
 
-    
+    #def test_logs_error_if_wrong_last_checked_arg_passed(self, s3_client):
+
+@mock_aws          
+class TestCheckFileExistsInBucket: 
+    def test_logs_error_if_ingestion_bucket_does_not_exist(self, s3_client): 
+        assert check_file_exists_in_ingestion_bucket(bucket="wrong", key="nothing") == False
+     
+    def test_logs_error_if_no_file_ingested(self, s3_client): 
+        #mock bucket 
+        s3_client.create_bucket(
+        Bucket='ingestion-bucket-124-33',
+        CreateBucketConfiguration={
+        'LocationConstraint': 'eu-west-2',
+            },
+        )
+
+        #create a fake design csv file in ingestion bucket
+        file_marker = "1995-01-01 00:00:00.000000"
+        columns = ['design_id', 'created_at', 
+                'last_updated', 'design_name', 
+                'file_location', 'file_name']
+        
+        new_rows = [
+            [0,datetime(2022, 11, 3, 14, 20, 49, 962000), datetime(2022, 11, 3, 14, 20, 49, 962000),'Wooden', '/usr', 'wooden-20220717-npgz.json' ]
+        ]
+        
+        df = pd.DataFrame(new_rows, columns = columns)
+        #file not added to s3 bucket 
+
+        assert check_file_exists_in_ingestion_bucket(bucket='ingestion-bucket-124-33', key=f"design/{file_marker}.csv") == False
+
+       
+
+       
+
 
     

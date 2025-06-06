@@ -59,12 +59,19 @@ def dim_design(last_checked, ingestion_bucket, processed_bucket):
         logger.error(f"there has been a error in converting to parquet and uploading for dim_design {str(client_error)}")
 
 def check_file_exists_in_ingestion_bucket(bucket, key):
-    s3 = boto3.client("s3")
+    s3_client = boto3.client("s3")
     try:
-        s3.head_object(Bucket=bucket, Key=key)
+        s3_client.head_object(Bucket=bucket, Key=key)
         logger.info(f"Key: '{key}' found!")
         return True
-    except botocore.exceptions.ClientError as e:
-        if e.response["Error"]["Code"] == "404":
+    except s3_client.exceptions.NoSuchBucket as NoSuchBucket: 
+        logger.info(f"Bucket: '{bucket}' does not exist!")
+        return False
+    except botocore.exceptions.ClientError as ClientError:
+        if ClientError.response["Error"]["Code"] == "404":
             logger.info(f"Key: '{key}' does not exist!")
             return False
+
+    
+
+            
