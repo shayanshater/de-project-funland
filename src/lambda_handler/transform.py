@@ -1,3 +1,4 @@
+import botocore.exceptions
 import awswrangler as wr
 import boto3
 import botocore
@@ -47,13 +48,15 @@ def dim_design(last_checked, ingestion_bucket, processed_bucket):
     
     file_path_s3 = f's3://{ingestion_bucket}/{file_key}' 
     design_df = wr.s3.read_csv(file_path_s3)
-    
     dim_design_df = design_df.drop(['Unnamed: 0','last_updated', "created_at"], axis=1)
-    
+    logger.info("dim_design dataframe has been created")
     
     processed_file_key = f"dim_design/{last_checked}.parquet" # TODO: check the .parquet
-    wr.s3.to_parquet(dim_design_df, f"s3://{processed_bucket}/{processed_file_key}")
-
+    try:
+        wr.s3.to_parquet(dim_design_df, f"s3://{processed_bucket}/{processed_file_key}")
+        logger.info(f"dim_design parquet has been uploaded to ingestion s3 at: s3://{processed_bucket}/{processed_file_key}")
+    except botocore.exceptions.ClientError as client_error:
+        logger.error(f"there has been a error in converting to parquet and uploading for dim_design {str(client_error)}")
 
 def check_file_exists_in_ingestion_bucket(bucket, key):
     s3 = boto3.client("s3")

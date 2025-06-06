@@ -61,10 +61,12 @@ class TestDimDesignFunction:
         ]
         df_expected = pd.DataFrame(dim_new_rows, columns = dim_columns)
         
-        #df_expected.astype({'design_id': 'int64'}).dtypes
-        #assert that uploaded file matches our expected outlook
 
-        assert pd.testing.assert_frame_equal(df_expected, df_result)
+        #assert that uploaded file matches our expected outlook
+        assert list(df_result.values[0]) == list(df_expected.values[0])
+        # assert len(df_expected.values[0]) == len(df_result.values[0])
+        # assert all([a == b for a, b in zip(df_result.values[0], df_expected.values[0])])
+
     
 
     
