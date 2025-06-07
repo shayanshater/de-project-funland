@@ -47,16 +47,21 @@ jobs:
         run:
           sudo apt-get update
           sudo apt-get install -y make
+
+
       - name: Checkout Repo
         uses: actions/checkout@v4
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: S{{ secrets.AWS_REGION }}
+
       - name: Install Terraform
-        uses: hasicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v1
+
       - name: Terraform Init
         working-directory: terraform
         run: terraform init
