@@ -6,30 +6,34 @@ on:
       - main
 
 jobs:
-  run-tests: 
+  setup-system: 
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
     - name: Install system dependencies
       run:
         sudo apt-get update
         sudo apt-get install -y make
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+
     - name: Set up Python virtual environment and instal dependencies
       run:
         make requirements
+
     - name: Run full code quality, test and coverage checks
         make run-checks
-    - name: Archive coverage report
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: coverage.txt
+
+    # - name: Archive coverage report
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: coverage-report
+    #     path: coverage.txt
 
   deploy-dev:
     # only runs if push or pull request happens to main branch
