@@ -11,7 +11,7 @@ jobs:
     steps:
     - name: Install system dependencies
       run:
-        sudo apt-get update
+        sudo apt-get update &&
         sudo apt-get install -y make
 
     - name: Checkout repository
@@ -66,5 +66,8 @@ jobs:
       - name: Terraform Apply
         working-directory: terraform
         run: terraform apply -auto-approve
+      - name: Terraform Destroy
+        working-directory: terraform
+        run: terraform destroy -auto-approve
 
     
