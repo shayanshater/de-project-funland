@@ -68,11 +68,11 @@ jobs:
       - name: Terraform Plan
         working-directory: terraform
         run: pip install pg8000 -t ../dependencies/packages && terraform plan
-      - name: Terraform Apply
-        working-directory: terraform
-        run: terraform apply -auto-approve
-      - name: Terraform Destroy
-        working-directory: terraform
-        run: terraform destroy -auto-approve
+      # - name: Terraform Apply
+      #   working-directory: terraform
+      #   run: terraform apply -auto-approve
+      # - name: Terraform Destroy
+      #   working-directory: terraform
+      #   run: terraform destroy -auto-approve
 
     
