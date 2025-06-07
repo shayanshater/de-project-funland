@@ -44,6 +44,10 @@ jobs:
     needs: run-tests
     runs-on: ubuntu-latest
     steps:
+      - name: Install system dependencies
+        run:
+          sudo apt-get update
+          sudo apt-get install -y make
       - name: Checkout Repo
         uses: actions/checkout@v4
       - name: Configure AWS credentials
