@@ -74,7 +74,7 @@ jobs:
         run: terraform init
       - name: Terraform Plan
         working-directory: terraform
-        run: pip install pg8000 -t ../dependencies/packages && terraform plan
+        run: terraform plan
       # - name: Terraform Apply
       #   working-directory: terraform
       #   run: terraform apply -auto-approve
