@@ -1,5 +1,4 @@
 name: Secrets workflow 
-
 on: 
   push: 
     branches:
@@ -7,6 +6,7 @@ on:
 
 jobs:
   setup-system: 
+    name: 'setup'
     runs-on: ubuntu-latest
     steps:
     - name: Install system dependencies
@@ -27,6 +27,7 @@ jobs:
         make requirements
 
     - name: Run full code quality, test and coverage checks
+      run:
         make run-checks
 
     # - name: Archive coverage report
