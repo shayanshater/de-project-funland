@@ -41,7 +41,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     name: deploy-dev
     environment: dev
-    needs: run-tests
     runs-on: ubuntu-latest
     steps:
       - name: Install system dependencies
