@@ -59,7 +59,14 @@ def dim_location(last_checked, ingestion_bucket, processed_bucket):
         dim_location_df = dim_location_col_name_df.drop(['Unnamed: 0', 'last_updated', "created_at"], axis=1)
         logger.info("dim_location dataframe has been created and transformed.")
 
-        #TODO: check number of columns and order of columns 
+        #change order of columns 
+        final_columns = ["location_id", "address_line_1","address_line_2", "district",
+                       "city", "postal_code", "country", "phone"]
+        varchar = ["address_line_1","address_line_2", "district",
+                       "city", "postal_code", "country", "phone"]
+        pd.DataFrame(varchar, dtype = str)
+        dim_location_df = dim_location_df[final_columns]
+
 
         # save to processed s3 bucket as parquet
         processed_file_key = f"dim_location/{last_checked}.parquet"
