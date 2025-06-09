@@ -140,7 +140,7 @@ class TestDimLocationFunction:
 
         dim_location_columns = ["location_id", "address_line_1","address_line_2", "district",
                        "city", "postal_code", "country", "phone"]
-        dim_location_new_rows = [[1, '6826 Herzog Via', np.nan, 'Avon','New Patienceburgh', '28441', 'Turkey','1803 637401' ]]
+        dim_location_new_rows = [[1, '6826 Herzog Via', np.nan, 'Avon','New Patienceburgh', 28441, 'Turkey','1803 637401' ]]
 
 
         df_expected = pd.DataFrame(dim_location_new_rows, columns = dim_location_columns)

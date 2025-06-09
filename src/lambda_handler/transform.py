@@ -64,7 +64,7 @@ def dim_location(last_checked, ingestion_bucket, processed_bucket):
                        "city", "postal_code", "country", "phone"]
         varchar = ["address_line_1","address_line_2", "district",
                        "city", "postal_code", "country", "phone"]
-        pd.DataFrame(varchar, dtype = str)
+        #pd.DataFrame(varchar, dtype = str)
         dim_location_df = dim_location_df[final_columns]
 
 
