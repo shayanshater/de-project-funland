@@ -44,7 +44,7 @@ def dim_currency(last_checked,ingestion_bucket,processed_bucket):
     ARGS:ingestion_bucket,last_checked, processed_bucket
     """
 
-    if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, key=f"currency/{last_checked}.csv"):
+    if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filename=f"currency/{last_checked}.csv"):
         logger.info(f"Key: '{key}' does not exist!")
         return 'No file found'
     
@@ -89,7 +89,7 @@ def dim_design(last_checked, ingestion_bucket, processed_bucket):
     
     file_key = f"design/{last_checked}.csv"
     
-    if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, key=file_key):
+    if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filename=file_key):
         logger.info(f"Key: '{file_key}' does not exist!")
         return 'No file found'
     
