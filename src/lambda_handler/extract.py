@@ -224,10 +224,16 @@ def extract_new_rows(table_name, last_checked, db_connection):
     """
     
     last_checked_dt_obj = datetime.strptime(last_checked, "%Y-%m-%d %H:%M:%S.%f")
-    query = f"""
+
+    if table_name in ["department"]:
+        query = f"""
+    SELECT * FROM {identifier(table_name)}
+    """
+    else:
+        query = f"""
     SELECT * FROM {identifier(table_name)} WHERE last_updated > {literal(last_checked_dt_obj)}
     """
-    
+           
     try:
         new_rows = db_connection.run(query)
         column_names = [column['name'] for column in db_connection.columns]

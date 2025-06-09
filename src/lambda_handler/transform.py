@@ -8,12 +8,8 @@ import pandas as pd
 import awswrangler as wr
 import botocore.exceptions
 
-
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
 
 def lambda_handler(event, context):
     """_summary_
@@ -26,7 +22,6 @@ def lambda_handler(event, context):
         _type_: _description_
     """
     pass
-
 
 
 def dim_currency(last_checked,ingestion_bucket,processed_bucket):
@@ -71,8 +66,6 @@ def dim_currency(last_checked,ingestion_bucket,processed_bucket):
         logger.error(f"there has been a error in converting to parquet and uploading for dim_design {str(client_error)}")
 
 
-
-
 def dim_design(last_checked, ingestion_bucket, processed_bucket):
     """
     Summary:
@@ -109,10 +102,61 @@ def dim_design(last_checked, ingestion_bucket, processed_bucket):
         logger.error(f"there has been a error in converting to parquet and uploading for dim_design {str(client_error)}")
         
         
-        
-def dim_staff():
-    pass
-
+def dim_staff(last_checked, ingestion_bucket, processed_bucket):
+    """
+    Summary:
+    Read staff and department CSVs from S3 ingestion bucket. If either is missing, return a skip message.
+    Transformations:
+    - Join staff and department on department_id
+    - Drop unnecessary columns:[department_id, manager, last_updated, created_at]
+    - Ensure no NULL values in required fields
+      note: 'department_name' and 'location' could be null at source ==> need to be overwritten??
+    - update data type of culomn: 'email_address' - as email address from varchar
+    - Save result as parquet to processed bucket
+    Args:
+        last_checked (str): Timestamp string used to locate the files
+        ingestion_bucket (str): S3 source bucket
+        processed_bucket (str): S3 destination bucket
+    """
+    key_staff = f"staff/{last_checked}.csv"
+    key_department = f"department/{last_checked}.csv"
+    try:
+        # Check both files exist
+        if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filename=key_staff):
+            logger.warning(f"Missing file: {key_staff}")
+            return 'Missing staff file'
+        # if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, key=key_department):
+        #     logger.warning(f"Missing file: {key_department}")
+        #     return 'Missing department file'
+        # Read both CSVs
+        staff_path = f"s3://{ingestion_bucket}/{key_staff}"
+        department_path = f"s3://{ingestion_bucket}/{key_department}"
+        staff_df = wr.s3.read_csv(staff_path)
+        department_df = wr.s3.read_csv(department_path)
+        logger.info("Staff and department files loaded successfully.")
+        # Merge on department_id
+        merged_df = pd.merge(staff_df, department_df, on="department_id", how="left")
+        # Drop unwanted columns
+        drop_cols = [col for col in ['Unnamed: 0_x', 'Unnamed: 0_y', 'department_id', 'manager', 
+                                     'last_updated_x', 'last_updated_y', 'created_at_x',
+                                     'created_at_y']]# if col in merged_df.columns]
+        dim_staff_df = merged_df.drop(columns=drop_cols, axis=1)
+        # Check for missing values in required columns
+        # required_cols = ['staff_id', 'first_name', 'last_name', 'email_address']
+        # if dim_staff_df[required_cols].isnull().any().any():
+        #     logger.error("Null values found in required dim_staff columns.")
+        #     raise ("Null values in NOT NULL fields.")
+        # Upload as parquet
+        output_key = f"dim_staff/{last_checked}.parquet"
+        wr.s3.to_parquet(dim_staff_df, f"s3://{processed_bucket}/{output_key}")
+        logger.info(f"dim_staff uploaded successfully to s3://{processed_bucket}/{output_key}")
+        return 'dim_staff transformation complete'
+    except botocore.exceptions.ClientError as e:
+        logger.error(f"S3 client error: {e}")
+        raise e
+    except Exception as e:
+        logger.error(f"Unexpected error in dim_staff: {e}")
+        raise e
 
 def dim_location():
     pass
@@ -143,6 +187,17 @@ def check_file_exists_in_ingestion_bucket(bucket, filename):
             logger.info(f"Key: '{filename}' does not exist!")
             return False
 
+
+def dim_counterparty():
+    pass
+
+
+def dim_date():
+    pass
+
+
+def fact_sales_order():
+    pass
     
 
      
