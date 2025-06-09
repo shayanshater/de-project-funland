@@ -5,6 +5,7 @@ import awswrangler as wr
 from datetime import datetime
 import pandas as pd
 from moto import mock_aws
+import pandas.testing as assert_frame_equal
 import numpy as np
 
 
@@ -102,7 +103,7 @@ class TestCheckFileExistsInBucket:
        
 @mock_aws
 class TestDimLocationFunction:
-     def test_dim_location_file_lands_in_processed_bucket(self, s3_client):
+    def test_dim_location_file_lands_in_processed_bucket(self, s3_client):
          #make mocked bucket, ingestion and processed
         s3_client.create_bucket(
         Bucket='ingestion-bucket-555-22',
@@ -137,15 +138,88 @@ class TestDimLocationFunction:
 
         #read file and get expected result 
         df_result = wr.s3.read_parquet(f"s3://processed-bucket-555-22/dim_location/1995-01-01 00:00:00.000000.parquet")
+        df_result["location_id"] = df_result["location_id"].astype(int)
+        for col in df_result.columns:
+            if col != "location_id":
+                df_result[col] = df_result[col].astype(str)
 
+
+        # df_result = df_result.astype(str)
         dim_location_columns = ["location_id", "address_line_1","address_line_2", "district",
                        "city", "postal_code", "country", "phone"]
-        dim_location_new_rows = [[1, '6826 Herzog Via', np.nan, 'Avon','New Patienceburgh', 28441, 'Turkey','1803 637401' ]]
-
-
-        df_expected = pd.DataFrame(dim_location_new_rows, columns = dim_location_columns)
         
+        dim_location_new_rows = [[1, '6826 Herzog Via', np.nan, 'Avon','New Patienceburgh', '28441', 'Turkey','1803 637401' ]]
+        # df_result = df_result.astype(str)
+       
+        df_expected = pd.DataFrame(dim_location_new_rows, columns = dim_location_columns)
+        # df_expected = df_expected.astype(str)
+        df_expected["location_id"] = df_expected["location_id"].astype(int)
+        for col in df_expected.columns:
+            if col != "location_id":
+                df_expected[col] = df_expected[col].astype(str)
 
         #assert that uploaded file matches our expected outlook
         assert list(df_result.values[0]) == list(df_expected.values[0])
+
+    def test_dim_location_file_lands_in_processed_bucket_when_postal_code_has_dash(self, s3_client):
+         #make mocked bucket, ingestion and processed
+        s3_client.create_bucket(
+        Bucket='ingestion-bucket-555-22',
+        CreateBucketConfiguration={
+        'LocationConstraint': 'eu-west-2',
+            },
+        )
+        s3_client.create_bucket(
+        Bucket='processed-bucket-555-22',
+        CreateBucketConfiguration={
+        'LocationConstraint': 'eu-west-2',
+            },
+        )
+
+        #create a fake locationn csv file in ingestion bucket
+        file_marker = "1995-01-01 00:00:00.000000"
+        columns = ["address_id", "address_line_1", 
+                   "address_line_2", "city","country",
+                   "created_at", "district", "last_updated",
+                   "phone","postal_code"
+                 ] 
+                     
+        new_rows = [[
+            2, '179 Alexie Cliffs', None, 'Aliso Viejo', 'San Marino',
+            datetime(2022, 11, 3, 14, 20, 49, 962000), None,
+            datetime(2022, 11, 3, 14, 20, 49, 962000), '9621 880720', '99305-7380'
+        ]]
+
+        df = pd.DataFrame(new_rows, columns = columns)
+        wr.s3.to_csv(df, f"s3://ingestion-bucket-555-22/address/{file_marker}.csv")
+
+        #run function 
+        dim_location(last_checked=file_marker, ingestion_bucket='ingestion-bucket-555-22', processed_bucket='processed-bucket-555-22')
+
+        #read file and get expected result 
+        df_result = wr.s3.read_parquet(f"s3://processed-bucket-555-22/dim_location/1995-01-01 00:00:00.000000.parquet")
+        df_result["location_id"] = df_result["location_id"].astype(int)
+        for col in df_result.columns:
+            if col != "location_id":
+                df_result[col] = df_result[col].astype(str)
+
+
+        # df_result = df_result.astype(str)
+        dim_location_columns = ["location_id", "address_line_1","address_line_2", "district",
+                       "city", "postal_code", "country", "phone"]
+        
+        dim_location_new_rows = [[2, '179 Alexie Cliffs', np.nan, np.nan, 'Aliso Viejo', '99305-7380', 'San Marino', '9621 880720']]
+        # df_result = df_result.astype(str)
+
+        df_expected = pd.DataFrame(dim_location_new_rows, columns = dim_location_columns)
+        # df_expected = df_expected.astype(str)
+        df_expected["location_id"] = df_expected["location_id"].astype(int)
+        for col in df_expected.columns:
+            if col != "location_id":
+                df_expected[col] = df_expected[col].astype(str)
+
+        #assert that uploaded file matches our expected outlook
+        assert list(df_result.values[0]) == list(df_expected.values[0])
+
+
  
