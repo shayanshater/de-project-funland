@@ -117,6 +117,10 @@ def dim_staff():
 def dim_location():
     pass
 
+def dim_counterparty():
+    pass
+
+
 def check_file_exists_in_ingestion_bucket(bucket, filename):
 
     """
@@ -142,6 +146,7 @@ def check_file_exists_in_ingestion_bucket(bucket, filename):
         if ClientError.response["Error"]["Code"] == "404":
             logger.info(f"Key: '{filename}' does not exist!")
             return False
+
 
     
 
