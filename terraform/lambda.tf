@@ -1,3 +1,14 @@
+resource "null_resource" "install_layer_dependencies" {
+  provisioner "local-exec" {
+    command = "pip install -r ../lambda_packages.txt -t ../dependencies/packages/"
+  }
+  triggers = {
+    trigger = timestamp()
+  }
+}
+
+
+
 # we are zipping the python code for the Lambda function
 data "archive_file" "lambda" {
   type             = "zip"
@@ -11,6 +22,7 @@ data "archive_file" "lambda_layer" {
   type             = "zip"
   source_dir       = "${path.module}/../dependencies/packages"
   output_path      = "${path.module}/../dependencies/layers/lambda_handlers_layer.zip"
+  depends_on = [ null_resource.install_layer_dependencies ]
 }
 
 
@@ -24,11 +36,6 @@ resource "aws_s3_object" "lambda_zip_file"{
 
 # creating the lambda layer
 resource "aws_lambda_layer_version" "lambda_layer" {
-  # provisioner "local-exec" {
-  # command = "pip install pandas -t dependencies/packages/pandas/"
-  #"pip install pg8000 -t dependencies/packages/pg8000/"
-  #"pip install awswrangler -t dependencies/packages/awswrangler/"
-  # }
   layer_name          = "etl_layer"
   compatible_runtimes = [var.python_runtime]
   s3_bucket = aws_s3_object.lambda_zip_file.bucket

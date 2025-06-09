@@ -5,6 +5,7 @@ import pytest
 from pg8000.native import DatabaseError, InterfaceError, Connection
 from moto import mock_aws
 import boto3
+from botocore.config import Config
 from datetime import datetime
 import json
 import os
@@ -31,11 +32,17 @@ def tables_to_import():
     
 @pytest.fixture(scope='function')
 def ssm_client():
-    return boto3.client('ssm')
+    my_config = Config(
+        region_name = 'eu-west-2'
+    )
+    return boto3.client('ssm', config = my_config)
 
 @pytest.fixture(scope='function')
 def sm_client():
-    return boto3.client('secretsmanager')
+    my_config = Config(
+    region_name = 'eu-west-2'
+        )
+    return boto3.client('secretsmanager', config = my_config)
 
 @pytest.fixture(scope='function')
 def db_conn():
@@ -52,7 +59,10 @@ def db_conn():
 @pytest.fixture(scope='function')
 
 def s3_client():
-    return boto3.client('s3')
+    my_config = Config(
+    region_name = 'eu-west-2'
+    )
+    return boto3.client('s3', config = my_config)
 
 
 

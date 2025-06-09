@@ -4,6 +4,7 @@ pytest # ==7.4.3
 pytest-testdox
 boto3
 moto
+awswrangler
 
 pandas
 pytest-cov
@@ -11,3 +12,4 @@ flake8
 black
 bandit
 pip-audit
+awswrangler

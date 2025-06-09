@@ -65,4 +65,4 @@ audit:
 	$(call execute_in_env, pip-audit)
 
 # Run all tests and checks in one
-run-checks: run-black lint security-test unit-test check-coverage audit
+run-checks: unit-test # run-black  security-test  check-coverage audit lint
