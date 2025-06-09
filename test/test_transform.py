@@ -191,29 +191,22 @@ class TestDimStaffFunction:
 
         assert list(df_result.values[0]) == list(df_expected.values[0])
 
-
-
-
-
-
-
-
-
-
-        
-        
-
-        
-
-
-    pass
-
 @mock_aws
 class TestDimLocationFunction:
     pass
 
 @mock_aws
 class TestDimCounterpartyFunction:
+    pass
+
+
+@mock_aws
+class TestDimDateFunction:
+    pass
+
+
+@mock_aws
+class TestFactSalesOrderFunction:
     pass
 
 
