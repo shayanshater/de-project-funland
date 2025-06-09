@@ -1,6 +1,6 @@
 
 from src.lambda_handler.transform import (dim_design, check_file_exists_in_ingestion_bucket, dim_currency,
-                                          check_file_exists_in_ingestion_bucket, dim_staff)
+                                          check_file_exists_in_ingestion_bucket, dim_staff, dim_counterparty)
 import pytest
 import boto3
 import awswrangler as wr
@@ -197,7 +197,53 @@ class TestDimLocationFunction:
 
 @mock_aws
 class TestDimCounterpartyFunction:
-    pass
+    def test_dim_counterparty_file_lands_in_processed_bucket(self,s3_client):
+        #make mocked bucket, ingestion and processed
+        s3_client.create_bucket(
+        Bucket='ingestion-bucket-124-33',
+        CreateBucketConfiguration={
+        'LocationConstraint': 'eu-west-2',
+            },
+        )
+        s3_client.create_bucket(
+        Bucket='processed-bucket-124-33',
+        CreateBucketConfiguration={
+        'LocationConstraint': 'eu-west-2',
+            },
+        )
+        
+        file_marker = "1995-01-01 00:00:00.000000"
+
+        counterparty_columns=['commercial_contact', 'counterparty_id', 'counterparty_legal_name', 'created_at', 'delivery_contact', 'last_updated', 'legal_address_id']
+        
+        new_rows_counterparty=[['Micheal Toy', 1, 'Fahey and Sons', datetime(2022, 11, 3, 14, 20, 51, 563000), 'Mrs. Lucy Runolfsdottir', datetime(2022, 11, 3, 14, 20, 51, 563000), 15]]
+        
+        df_counterparty=pd.DataFrame(new_rows_counterparty,columns=counterparty_columns)
+        wr.s3.to_csv(df_counterparty, f"s3://ingestion-bucket-124-33/counterparty/{file_marker}.csv" )
+        
+        address_columns=['address_id', 'address_line_1', 'address_line_2', 'city', 'country', 'created_at', 'district', 'last_updated', 'phone', 'postal_code'  ]
+        new_rows_address=[[1, '6826 Herzog Via', None, 'New Patienceburgh', 'Turkey', datetime(2022, 11, 3, 14, 20, 49, 962000), 'Avon', datetime(2022, 11, 3, 14, 20, 49, 962000), '1803 637401', '28441']]
+        df_address=pd.DataFrame(new_rows_address,columns=address_columns)
+        wr.s3.to_csv(df_address, f"s3://ingestion-bucket-124-33/address/{file_marker}.csv")
+        
+        dim_counterparty(file_marker, "ingestion-bucket-124-33", 'processed-bucket-124-33', s3_client)
+        
+        #read the file from processed bucket
+        
+        df_result = wr.s3.read_parquet(f"s3://processed-bucket-124-33/dim_counterparty/1995-01-01 00:00:00.000000.parquet")
+        
+        dim_counterparty_columns=['counterparty_id', 'counterparty_legal_name', 
+        'counterparty_legal_address_line_1', 'counterparty_legal_address_line_2', 'counterparty_legal_district',
+        'counterparty_legal_city', 'counterparty_legal_postal_code', 'counterparty_legal_country', 
+        'counterparty_legal_phone_number' ]
+  
+        dim_counterparty_new_rows=[[1, 'Fahey and Sons', '6826 Herzog Via', None, 'Avon', 'New Patienceburgh', '28441',  'Turkey', '1803 637401']]
+
+        df_expected = pd.DataFrame(dim_counterparty_new_rows, columns = dim_counterparty_columns)
+
+        assert list(df_result.values[0]) == list(df_expected.values[0])
+
+
 
 
 @mock_aws
