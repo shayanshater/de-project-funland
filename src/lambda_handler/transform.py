@@ -161,6 +161,10 @@ def dim_staff(last_checked, ingestion_bucket, processed_bucket):
 def dim_location():
     pass
 
+def dim_counterparty():
+    pass
+
+
 def check_file_exists_in_ingestion_bucket(bucket, filename):
 
     """
@@ -188,6 +192,7 @@ def check_file_exists_in_ingestion_bucket(bucket, filename):
             return False
 
 
+    
 def dim_counterparty():
     pass
 
@@ -198,6 +203,5 @@ def dim_date():
 
 def fact_sales_order():
     pass
-    
 
      

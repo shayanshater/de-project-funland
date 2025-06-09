@@ -212,6 +212,10 @@ class TestDimStaffFunction:
 class TestDimLocationFunction:
     pass
 
+@mock_aws
+class TestDimCounterpartyFunction:
+    pass
+
 
 @mock_aws          
 class TestCheckFileExistsInBucket: 
