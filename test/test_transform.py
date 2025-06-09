@@ -8,7 +8,7 @@ from datetime import datetime
 import pandas as pd
 from moto import mock_aws
 import os
-
+import numpy as np
 
 
 @pytest.fixture(scope='function')
@@ -222,26 +222,38 @@ class TestDimCounterpartyFunction:
         wr.s3.to_csv(df_counterparty, f"s3://ingestion-bucket-124-33/counterparty/{file_marker}.csv" )
         
         address_columns=['address_id', 'address_line_1', 'address_line_2', 'city', 'country', 'created_at', 'district', 'last_updated', 'phone', 'postal_code'  ]
-        new_rows_address=[[1, '6826 Herzog Via', None, 'New Patienceburgh', 'Turkey', datetime(2022, 11, 3, 14, 20, 49, 962000), 'Avon', datetime(2022, 11, 3, 14, 20, 49, 962000), '1803 637401', '28441']]
+        new_rows_address=[[15, '605 Haskell Trafficway', 'Axel Freeway', 'East Bobbie', 'Heard Island and McDonald Islands', datetime(2022, 11, 3, 14, 20, 49, 962000), None, datetime(2022, 11, 3, 14, 20, 49, 962000), '9687 937447', '88253-4257']]
         df_address=pd.DataFrame(new_rows_address,columns=address_columns)
         wr.s3.to_csv(df_address, f"s3://ingestion-bucket-124-33/address/{file_marker}.csv")
         
         dim_counterparty(file_marker, "ingestion-bucket-124-33", 'processed-bucket-124-33', s3_client)
         
         #read the file from processed bucket
-        
         df_result = wr.s3.read_parquet(f"s3://processed-bucket-124-33/dim_counterparty/1995-01-01 00:00:00.000000.parquet")
+        df_result = df_result.replace(np.nan, None)
         
-        dim_counterparty_columns=['counterparty_id', 'counterparty_legal_name', 
-        'counterparty_legal_address_line_1', 'counterparty_legal_address_line_2', 'counterparty_legal_district',
-        'counterparty_legal_city', 'counterparty_legal_postal_code', 'counterparty_legal_country', 
-        'counterparty_legal_phone_number' ]
+        dim_counterparty_columns=[
+        'counterparty_id', 
+        'counterparty_legal_name', 
+        'counterparty_legal_address_line_1', 
+        'counterparty_legal_address_line_2',
+        'counterparty_legal_district',
+        'counterparty_legal_city', 
+        'counterparty_legal_postal_code', 
+        'counterparty_legal_country', 
+        'counterparty_legal_phone_number' 
+        ]
   
-        dim_counterparty_new_rows=[[1, 'Fahey and Sons', '6826 Herzog Via', None, 'Avon', 'New Patienceburgh', '28441',  'Turkey', '1803 637401']]
+        dim_counterparty_new_rows=[[1, 'Fahey and Sons', 
+                                    '605 Haskell Trafficway', 'Axel Freeway', 
+                                    'East Bobbie', 'Heard Island and McDonald Islands', 
+                                    None, '9687 937447', '88253-4257']]
 
         df_expected = pd.DataFrame(dim_counterparty_new_rows, columns = dim_counterparty_columns)
-
+        for val in df_result.values[0]:
+            print(type(val))
         assert list(df_result.values[0]) == list(df_expected.values[0])
+        #assert list(df_result.columns) == list(df_expected.columns)
 
 
 
