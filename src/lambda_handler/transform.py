@@ -27,7 +27,7 @@ def dim_location(ingestion_bucket, processed_bucket, last_checked):
     read the csv file (as a dataframe) that was uploaded (address/<timestamp>.csv) at the extract section.
     If there was no 'location' file uploaded, return a skip message and stop at this point.
 
-    To do to transform the dim_location dataframe:
+    To transform the dim_location dataframe:
     - drop the last_updated and created_at columns
     - 'address_line_2' and 'district' columns could be null. 
     Every other columns are not null.
@@ -43,7 +43,7 @@ def dim_location(ingestion_bucket, processed_bucket, last_checked):
     file_key = f"address/{last_checked}.csv"
 
     try:    
-        if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, key=file_key):
+        if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filname=file_key):
             logger.info(f"No file found at '{file_key}'. Skipping dim_location transformation.")
             return 'No file found'
         
@@ -52,20 +52,11 @@ def dim_location(ingestion_bucket, processed_bucket, last_checked):
         location_df = wr.s3.read_csv(file_path_s3)
         logger.info(f"File {file_key} read successfully from ingestion bucket.")
 
-        # check for missing values in NOT NULL columns
-        required_columns = ['address_line_1', 'city', 'postal_code', 'country', 'phone']
-        if location_df[required_columns].isnull().any().any():
-            logger.error("Missing required fields in dim_location data.")
-            raise ("Null value found in NOT NULL dim_location columns.")
-        
-        # fill optional columns if null
-        location_df.fillna({
-            "address_line_2" : "NaN",
-            "district" : "NaN"
-        }, inplace=True)
+        #addressID to be updated to locationID 
+        dim_location_col_name_df = location_df.rename(columns = {"address_id" : "location_id"})
 
         # drop unneccessery columns
-        dim_location_df = location_df.drop(['Unnamed: 0', 'last_updated', "created_at"], axis=1)
+        dim_location_df = dim_location_col_name_df.drop(['Unnamed: 0', 'last_updated', "created_at"], axis=1)
         logger.info("dim_location dataframe has been created and transformed.")
 
         # save to processed s3 bucket as parquet
@@ -128,7 +119,7 @@ def dim_design(last_checked, ingestion_bucket, processed_bucket):
     
     file_key = f"design/{last_checked}.csv"
     
-    if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, key=file_key):
+    if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filename=file_key):
         logger.info(f"Key: '{file_key}' does not exist!")
         return 'No file found'
     

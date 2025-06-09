@@ -72,7 +72,7 @@ class TestDimDesignFunction:
 @mock_aws          
 class TestCheckFileExistsInBucket: 
     def test_logs_error_if_ingestion_bucket_does_not_exist(self, s3_client): 
-        assert check_file_exists_in_ingestion_bucket(bucket="wrong", key="nothing") == False
+        assert check_file_exists_in_ingestion_bucket(bucket="wrong", filename="nothing") == False
      
     def test_logs_error_if_no_file_ingested(self, s3_client): 
         #mock bucket 
@@ -96,10 +96,11 @@ class TestCheckFileExistsInBucket:
         df = pd.DataFrame(new_rows, columns = columns)
         #file not added to s3 bucket 
 
-        assert check_file_exists_in_ingestion_bucket(bucket='ingestion-bucket-124-33', key=f"design/{file_marker}.csv") == False
+        assert check_file_exists_in_ingestion_bucket(bucket='ingestion-bucket-124-33', filename=f"design/{file_marker}.csv") == False
 
        
-
+@mock_aws
+class TestDimLocation
        
 
 
