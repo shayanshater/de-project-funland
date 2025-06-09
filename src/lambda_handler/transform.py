@@ -63,19 +63,6 @@ def dim_currency(last_checked,ingestion_bucket,processed_bucket):
         logger.error(f"there has been a error in converting to parquet and uploading for dim_design {str(client_error)}")
 
 
-def check_file_exists_in_ingestion_bucket(bucket, key):
-    s3_client = boto3.client("s3")
-    try:
-        s3_client.head_object(Bucket=bucket, Key=key)
-        logger.info(f"Key: '{key}' found!")
-        return True
-    except s3_client.exceptions.NoSuchBucket as NoSuchBucket: 
-        logger.info(f"Bucket: '{bucket}' does not exist!")
-        return False
-    except botocore.exceptions.ClientError as ClientError:
-        if ClientError.response["Error"]["Code"] == "404":
-            logger.info(f"Key: '{key}' does not exist!")
-            return False
 
 
 

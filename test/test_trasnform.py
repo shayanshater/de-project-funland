@@ -72,29 +72,3 @@ class TestDimCurrency:
 
         assert list(df_expected.values[0]) == list(df_result.values[0])
 
-@mock_aws          
-class TestCheckFileExistsInBucket: 
-    def test_logs_error_if_ingestion_bucket_does_not_exist(self, s3_client): 
-        assert check_file_exists_in_ingestion_bucket(bucket="wrong", key="nothing") == False
-     
-    def test_logs_error_if_no_file_ingested(self, s3_client): 
-        #mock bucket 
-        s3_client.create_bucket(
-        Bucket='ingestion-bucket-124-33',
-        CreateBucketConfiguration={
-        'LocationConstraint': 'eu-west-2',
-            },
-        )
-
-        last_checked = "1995-01-01 00:00:00.000000"
-        
-        columns= ['currency_id', 'currency_code', 'created_at', 'last_updated']
-        
-        
-        new_rows = [
-            [0, 'GBP', datetime(2022, 11, 3, 14, 20, 51, 563000), datetime(2022, 11, 3, 14, 20, 51, 563000)]
-        ]
-        
-        df = pd.DataFrame(new_rows, columns = columns)
-
-        assert check_file_exists_in_ingestion_bucket(bucket='ingestion-bucket-124-33', key=f"currency/{last_checked}.csv") == False
