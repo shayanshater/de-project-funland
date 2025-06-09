@@ -21,7 +21,7 @@ def lambda_handler(event, context):
     pass
 
 
-def dim_location(ingestion_bucket, processed_bucket, last_checked):
+def dim_location(last_checked, ingestion_bucket, processed_bucket):
     """
     Summary:
     read the csv file (as a dataframe) that was uploaded (address/<timestamp>.csv) at the extract section.
@@ -43,7 +43,7 @@ def dim_location(ingestion_bucket, processed_bucket, last_checked):
     file_key = f"address/{last_checked}.csv"
 
     try:    
-        if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filname=file_key):
+        if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filename=file_key):
             logger.info(f"No file found at '{file_key}'. Skipping dim_location transformation.")
             return 'No file found'
         
@@ -58,6 +58,8 @@ def dim_location(ingestion_bucket, processed_bucket, last_checked):
         # drop unneccessery columns
         dim_location_df = dim_location_col_name_df.drop(['Unnamed: 0', 'last_updated', "created_at"], axis=1)
         logger.info("dim_location dataframe has been created and transformed.")
+
+        #TODO: check number of columns and order of columns 
 
         # save to processed s3 bucket as parquet
         processed_file_key = f"dim_location/{last_checked}.parquet"

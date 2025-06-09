@@ -1,4 +1,4 @@
-from src.lambda_handler.transform import dim_design, check_file_exists_in_ingestion_bucket
+from src.lambda_handler.transform import dim_design, check_file_exists_in_ingestion_bucket, dim_location
 import pytest
 import boto3
 import awswrangler as wr
@@ -100,8 +100,51 @@ class TestCheckFileExistsInBucket:
 
        
 @mock_aws
-class TestDimLocation
-       
+class TestDimLocationFunction:
+     def test_dim_location_file_lands_in_processed_bucket(self, s3_client):
+         #make mocked bucket, ingestion and processed
+        s3_client.create_bucket(
+        Bucket='ingestion-bucket-555-22',
+        CreateBucketConfiguration={
+        'LocationConstraint': 'eu-west-2',
+            },
+        )
+        s3_client.create_bucket(
+        Bucket='processed-bucket-555-22',
+        CreateBucketConfiguration={
+        'LocationConstraint': 'eu-west-2',
+            },
+        )
 
+        #create a fake locationn csv file in ingestion bucket
+        file_marker = "1995-01-01 00:00:00.000000"
+        columns = ["address_id", "address_line_1", 
+                   "address_line_2", "city","country",
+                   "created_at", "district", "last_updated",
+                   "phone","postcode"
+                 ] 
+                     
+        new_rows = [[1, '6826 Herzog Via', None,'New Patienceburgh','Turkey', 
+                     datetime(2022, 11, 3, 14, 20, 49, 962000),'Avon',
+                     datetime(2022, 11, 3, 14, 20, 49, 962000),'1803 637401','28441']]
 
+        df = pd.DataFrame(new_rows, columns = columns)
+        wr.s3.to_csv(df, f"s3://ingestion-bucket-555-22/address/{file_marker}.csv")
     
+        #run function 
+        dim_location(last_checked=file_marker, ingestion_bucket='ingestion-bucket-555-22', processed_bucket='processed-bucket-555-22')
+
+        #read file and get expected result 
+        df_result = wr.s3.read_parquet(f"s3://processed-bucket-555-22/dim_location/1995-01-01 00:00:00.000000.parquet")
+
+        dim_location_columns = ["location_id", "address_line_1","address_line_2", "district",
+                       "city", "postal_code", "country", "phone"]
+        dim_location_new_rows = [[1, '6826 Herzog Via', None,'Avon','New Patienceburgh','28441''Turkey', '1803 637401']]
+
+
+        df_expected = pd.DataFrame(dim_location_new_rows, columns = dim_location_columns)
+        
+
+        #assert that uploaded file matches our expected outlook
+        assert list(df_result.values[0]) == list(df_expected.values[0])
+ 
