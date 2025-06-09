@@ -1,5 +1,3 @@
-
-
 import logging
 import boto3
 from botocore.exceptions import ClientError
@@ -107,11 +105,9 @@ def dim_location(last_checked, ingestion_bucket, processed_bucket):
         #change order of columns 
         final_columns = ["location_id", "address_line_1","address_line_2", "district",
                        "city", "postal_code", "country", "phone"]
-        varchar = ["address_line_1","address_line_2", "district",
-                       "city", "postal_code", "country", "phone"]
+        
         #pd.DataFrame(varchar, dtype = str)
         dim_location_df = dim_location_df[final_columns]
-
 
         # save to processed s3 bucket as parquet
         processed_file_key = f"dim_location/{last_checked}.parquet"
@@ -219,8 +215,6 @@ def dim_staff(last_checked, ingestion_bucket, processed_bucket):
         logger.error(f"Unexpected error in dim_staff: {e}")
         raise e
 
-def dim_location():
-    pass
 
 def dim_counterparty():
     pass
