@@ -130,6 +130,17 @@ class TestDimDesignFunction:
         # assert all([a == b for a, b in zip(df_result.values[0], df_expected.values[0])])
 
     #def test_logs_error_if_wrong_last_checked_arg_passed(self, s3_client):
+    
+    
+    
+@mock_aws
+class TestDimStaffFunction:
+    pass
+
+@mock_aws
+class TestDimLocationFunction:
+    pass
+
 
 @mock_aws          
 class TestCheckFileExistsInBucket: 

@@ -43,9 +43,11 @@ def dim_currency(last_checked,ingestion_bucket,processed_bucket):
 
     ARGS:ingestion_bucket,last_checked, processed_bucket
     """
+    
+    file_key = f"currency/{last_checked}.csv"
 
-    if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filename=f"currency/{last_checked}.csv"):
-        logger.info(f"Key: '{key}' does not exist!")
+    if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filename=file_key):
+        logger.info(f"File_key: '{file_key}' does not exist!")
         return 'No file found'
     
     #reading the csv file
@@ -105,6 +107,15 @@ def dim_design(last_checked, ingestion_bucket, processed_bucket):
         logger.info(f"dim_design parquet has been uploaded to ingestion s3 at: s3://{processed_bucket}/{processed_file_key}")
     except botocore.exceptions.ClientError as client_error:
         logger.error(f"there has been a error in converting to parquet and uploading for dim_design {str(client_error)}")
+        
+        
+        
+def dim_staff():
+    pass
+
+
+def dim_location():
+    pass
 
 def check_file_exists_in_ingestion_bucket(bucket, filename):
 
