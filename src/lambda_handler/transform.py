@@ -1,8 +1,12 @@
-import botocore.exceptions
-import awswrangler as wr
-import boto3
-import botocore
+
+
 import logging
+import boto3
+from botocore.exceptions import ClientError
+from datetime import datetime, timezone
+import pandas as pd
+import awswrangler as wr
+import botocore.exceptions
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -17,8 +21,49 @@ def lambda_handler(event, context):
     Returns:
         _type_: _description_
     """
-    
     pass
+
+
+def dim_currency(last_checked,ingestion_bucket,processed_bucket):
+
+    """
+    We will read the csv file for the currency table from the s3 ingestion bucket using awswrangler.
+    
+    Compare the column names in the currency table and dim_currency table.
+
+    We will make a dataframe using pandas for this table with the needed columns. 
+    
+
+    Convert it to parquet file and then upload it to the processed bucket.
+
+    ARGS:ingestion_bucket,last_checked, processed_bucket
+    """
+    
+    file_key = f"currency/{last_checked}.csv"
+
+    if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filename=file_key):
+        logger.info(f"File_key: '{file_key}' does not exist!")
+        return 'No file found'
+    
+    #reading the csv file
+    df_currency = wr.s3.read_csv(f"s3://{ingestion_bucket}/currency/{last_checked}.csv")
+    
+    #columns_currency=[currency_id, currency_code, created_at, last_updated]
+    #columns_dim_currency=[currency_id, currency_code, currency_name]
+
+    #dropping the columns that we dont need
+    df_dim_currency=df_currency.drop(["Unnamed: 0", "created_at", "last_updated"], axis=1)
+
+    #we have to add a new column(currency_name)
+    df_dim_currency=df_dim_currency.assign(currency_name=lambda x: x['currency_code'] + '_Name')
+    logger.info("dim_design dataframe has been created")
+    
+    #upload to s3 as a parquet file
+    try:
+        wr.s3.to_parquet(df_dim_currency,f"s3://{processed_bucket}/currency/{last_checked}.parquet")   #need processed bucket as a argument as well
+        logger.info(f"dim_currency parquet has been uploaded to ingestion s3 at: s3://{processed_bucket}/currency/{last_checked}.csv")
+    except botocore.exceptions.ClientError as client_error:
+        logger.error(f"there has been a error in converting to parquet and uploading for dim_design {str(client_error)}")
 
 
 def dim_location(last_checked, ingestion_bucket, processed_bucket):
@@ -82,34 +127,6 @@ def dim_location(last_checked, ingestion_bucket, processed_bucket):
         logger.error(f"Unexpected error in dim_location transform: {str(e)}")
         raise
 
-
-def dim_counterparty(last_checked, ingestion_bucket, processed_bucket):
-    """
-    Reads and transforms counterparty and address data into a dimension table.
-
-    Steps:
-        - Load 'counterparty/<timestamp>.csv' and 'address/<timestamp>.csv'
-        - Join them on 'legal_address_id' = 'address_id'
-        - Drop unnecessary columns:
-            ['last_checked', 'created_at', 'legal_address_id', 'address_id', 'commercial_contact', 'delivery_contact']
-        - Rename address fields to counterparty_legal_* format
-            (counterparty_id and counterparty_legal_name are same name in source as target.)
-            'address_line_1' => counterparty_legal_address_line_1
-            'address_line_2' => counterparty_legal_address_line_2
-            'district' => counterparty_legal_district
-            'city' => 'counterparty_legal_city'
-            'postal_code' => 'counterparty_legal_postal_code'
-            'country' => 'counterparty_legal_country'
-            'phone' => 'counterparty_legal_phone_number'
-
-        - Save result as parquet to processed S3 bucket
-
-    Args:
-        last_checked (str): Timestamp for the file name
-        ingestion_bucket (str): Source S3 bucket
-        processed_bucket (str): Destination S3 bucket
-    """
-
 def dim_design(last_checked, ingestion_bucket, processed_bucket):
     """
     Summary:
@@ -144,6 +161,70 @@ def dim_design(last_checked, ingestion_bucket, processed_bucket):
         logger.info(f"dim_design parquet has been uploaded to ingestion s3 at: s3://{processed_bucket}/{processed_file_key}")
     except botocore.exceptions.ClientError as client_error:
         logger.error(f"there has been a error in converting to parquet and uploading for dim_design {str(client_error)}")
+        
+        
+def dim_staff(last_checked, ingestion_bucket, processed_bucket):
+    """
+    Summary:
+    Read staff and department CSVs from S3 ingestion bucket. If either is missing, return a skip message.
+    Transformations:
+    - Join staff and department on department_id
+    - Drop unnecessary columns:[department_id, manager, last_updated, created_at]
+    - Ensure no NULL values in required fields
+      note: 'department_name' and 'location' could be null at source ==> need to be overwritten??
+    - update data type of culomn: 'email_address' - as email address from varchar
+    - Save result as parquet to processed bucket
+    Args:
+        last_checked (str): Timestamp string used to locate the files
+        ingestion_bucket (str): S3 source bucket
+        processed_bucket (str): S3 destination bucket
+    """
+    key_staff = f"staff/{last_checked}.csv"
+    key_department = f"department/{last_checked}.csv"
+    try:
+        # Check both files exist
+        if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filename=key_staff):
+            logger.warning(f"Missing file: {key_staff}")
+            return 'Missing staff file'
+        # if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, key=key_department):
+        #     logger.warning(f"Missing file: {key_department}")
+        #     return 'Missing department file'
+        # Read both CSVs
+        staff_path = f"s3://{ingestion_bucket}/{key_staff}"
+        department_path = f"s3://{ingestion_bucket}/{key_department}"
+        staff_df = wr.s3.read_csv(staff_path)
+        department_df = wr.s3.read_csv(department_path)
+        logger.info("Staff and department files loaded successfully.")
+        # Merge on department_id
+        merged_df = pd.merge(staff_df, department_df, on="department_id", how="left")
+        # Drop unwanted columns
+        drop_cols = [col for col in ['Unnamed: 0_x', 'Unnamed: 0_y', 'department_id', 'manager', 
+                                     'last_updated_x', 'last_updated_y', 'created_at_x',
+                                     'created_at_y']]# if col in merged_df.columns]
+        dim_staff_df = merged_df.drop(columns=drop_cols, axis=1)
+        # Check for missing values in required columns
+        # required_cols = ['staff_id', 'first_name', 'last_name', 'email_address']
+        # if dim_staff_df[required_cols].isnull().any().any():
+        #     logger.error("Null values found in required dim_staff columns.")
+        #     raise ("Null values in NOT NULL fields.")
+        # Upload as parquet
+        output_key = f"dim_staff/{last_checked}.parquet"
+        wr.s3.to_parquet(dim_staff_df, f"s3://{processed_bucket}/{output_key}")
+        logger.info(f"dim_staff uploaded successfully to s3://{processed_bucket}/{output_key}")
+        return 'dim_staff transformation complete'
+    except botocore.exceptions.ClientError as e:
+        logger.error(f"S3 client error: {e}")
+        raise e
+    except Exception as e:
+        logger.error(f"Unexpected error in dim_staff: {e}")
+        raise e
+
+def dim_location():
+    pass
+
+def dim_counterparty():
+    pass
+
 
 def check_file_exists_in_ingestion_bucket(bucket, filename):
 
@@ -171,6 +252,17 @@ def check_file_exists_in_ingestion_bucket(bucket, filename):
             logger.info(f"Key: '{filename}' does not exist!")
             return False
 
-    
 
-            
+    
+def dim_counterparty():
+    pass
+
+
+def dim_date():
+    pass
+
+
+def fact_sales_order():
+    pass
+
+     
