@@ -1,12 +1,11 @@
-from src.lambda_handler.extract import get_db_credentials, get_last_checked, create_db_connection, update_last_checked, extract_new_rows, convert_new_rows_to_df_and_upload_to_s3_as_csv,get_bucket_name,lambda_handler
 
-import os
 import logging
 import boto3
 from botocore.exceptions import ClientError
 from datetime import datetime, timezone
 import pandas as pd
 import awswrangler as wr
+import botocore.exceptions
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -23,23 +22,9 @@ def lambda_handler_transform(event, context):
     """
     pass
 
-#   this caused creation of real buckets when testing
-# ssm_client=boto3.client('ssm')
-# last_checked = get_last_checked(ssm_client)["last_checked"]
 
-# tables_to_import = ["transaction", "sales_order", 
-#                         "payment","counterparty", 
-#                         "currency", "department", 
-#                         "design", "staff",
-#                         "address", "purchase_order",
-#                         "payment_type"]
-    
-# table=tables_to_import[5]
-# ingestion_bucket = get_bucket_name()["ingestion_bucket"]
 
-#print(ingestion_bucket)
-
-def dim_currency(last_checked, table,  ingestion_bucket,processed_bucket):
+def dim_currency(last_checked,ingestion_bucket,processed_bucket):
 
     """
     We will read the csv file for the currency table from the s3 ingestion bucket using awswrangler.
@@ -50,14 +35,15 @@ def dim_currency(last_checked, table,  ingestion_bucket,processed_bucket):
     
     Convert it to parquet file and then upload it to the processed bucket.
 
-    ARGS:ingestion_bucket, table, last_checked
-
-
+    ARGS:ingestion_bucket,last_checked, processed_bucket
     """
-    #reading the csv file
 
-    #df_read = wr.s3.read_csv("s3://s-o-s3-bucket-prefix-20250520143017315000000001/project_test_with_wrangler.csv")
-    df_currency = wr.s3.read_csv(f"s3://{ingestion_bucket}/{table}/{last_checked}.csv")
+    if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, key=f"currency/{last_checked}.csv"):
+        logger.info(f"Key: '{key}' does not exist!")
+        return 'No file found'
+    
+    #reading the csv file
+    df_currency = wr.s3.read_csv(f"s3://{ingestion_bucket}/currency/{last_checked}.csv")
     
     #columns_currency=[currency_id, currency_code, created_at, last_updated]
     #columns_dim_currency=[currency_id, currency_code, currency_name]
@@ -67,10 +53,29 @@ def dim_currency(last_checked, table,  ingestion_bucket,processed_bucket):
 
     #we have to add a new column(currency_name)
     df_dim_currency=df_dim_currency.assign(currency_name=lambda x: x['currency_code'] + '_Name')
+    logger.info("dim_design dataframe has been created")
     
-    print(df_dim_currency)
     #upload to s3 as a parquet file
-    wr.s3.to_parquet(df_dim_currency,f"s3://{processed_bucket}/{table}/{last_checked}.parquet")   #need processed bucket as a argument as well
+    try:
+        wr.s3.to_parquet(df_dim_currency,f"s3://{processed_bucket}/currency/{last_checked}.parquet")   #need processed bucket as a argument as well
+        logger.info(f"dim_currency parquet has been uploaded to ingestion s3 at: s3://{processed_bucket}/currency/{last_checked}.csv")
+    except botocore.exceptions.ClientError as client_error:
+        logger.error(f"there has been a error in converting to parquet and uploading for dim_design {str(client_error)}")
+
+
+def check_file_exists_in_ingestion_bucket(bucket, key):
+    s3_client = boto3.client("s3")
+    try:
+        s3_client.head_object(Bucket=bucket, Key=key)
+        logger.info(f"Key: '{key}' found!")
+        return True
+    except s3_client.exceptions.NoSuchBucket as NoSuchBucket: 
+        logger.info(f"Bucket: '{bucket}' does not exist!")
+        return False
+    except botocore.exceptions.ClientError as ClientError:
+        if ClientError.response["Error"]["Code"] == "404":
+            logger.info(f"Key: '{key}' does not exist!")
+            return False
 
 
 

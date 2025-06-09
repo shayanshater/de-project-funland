@@ -1,4 +1,4 @@
-from src.lambda_handler.transform import dim_currency
+from src.lambda_handler.transform import dim_currency, check_file_exists_in_ingestion_bucket
 import pytest
 import boto3
 import awswrangler as wr
@@ -6,6 +6,7 @@ from datetime import datetime
 import pandas as pd
 from moto import mock_aws
 import os
+
 
 
 @pytest.fixture(scope='function')
@@ -39,8 +40,6 @@ class TestDimCurrency:
             },
         )
          
-        table="currency"
-        
         #create a fake design csv file in ingestion bucket
         last_checked = "2000-01-01 00:00:00.000000"
         
@@ -51,16 +50,16 @@ class TestDimCurrency:
         ]
         
         df = pd.DataFrame(new_rows, columns = columns)
-        wr.s3.to_csv(df, f"s3://ingestion-bucket-33-elisa-q/{table}/{last_checked}.csv")
+        wr.s3.to_csv(df, f"s3://ingestion-bucket-33-elisa-q/currency/{last_checked}.csv")
         
         
         ## run the function, which reads from the mocked ingestion bucket
         # and transforms the data (drops two columns) and adds a new column(currency_name) and uploads to processed bucket
-        dim_currency(last_checked = last_checked,table= table, ingestion_bucket="ingestion-bucket-33-elisa-q", processed_bucket='processed-bucket-funlanf-e-l-3')
+        dim_currency(last_checked = last_checked, ingestion_bucket="ingestion-bucket-33-elisa-q", processed_bucket='processed-bucket-funlanf-e-l-3')
         
         #read the file from processed bucket
         
-        df_result = wr.s3.read_parquet(f"s3://processed-bucket-funlanf-e-l-3/{table}/{last_checked}.parquet")
+        df_result = wr.s3.read_parquet(f"s3://processed-bucket-funlanf-e-l-3/currency/{last_checked}.parquet")
         #create an expected dataframe to match up against our uploaded file
         dim_columns = ['currency_id', 'currency_code', 'currency_name']
         dim_new_rows = [
@@ -72,4 +71,30 @@ class TestDimCurrency:
         #assert that uploaded file matches our expected outlook
 
         assert list(df_expected.values[0]) == list(df_result.values[0])
-            
+
+@mock_aws          
+class TestCheckFileExistsInBucket: 
+    def test_logs_error_if_ingestion_bucket_does_not_exist(self, s3_client): 
+        assert check_file_exists_in_ingestion_bucket(bucket="wrong", key="nothing") == False
+     
+    def test_logs_error_if_no_file_ingested(self, s3_client): 
+        #mock bucket 
+        s3_client.create_bucket(
+        Bucket='ingestion-bucket-124-33',
+        CreateBucketConfiguration={
+        'LocationConstraint': 'eu-west-2',
+            },
+        )
+
+        last_checked = "1995-01-01 00:00:00.000000"
+        
+        columns= ['currency_id', 'currency_code', 'created_at', 'last_updated']
+        
+        
+        new_rows = [
+            [0, 'GBP', datetime(2022, 11, 3, 14, 20, 51, 563000), datetime(2022, 11, 3, 14, 20, 51, 563000)]
+        ]
+        
+        df = pd.DataFrame(new_rows, columns = columns)
+
+        assert check_file_exists_in_ingestion_bucket(bucket='ingestion-bucket-124-33', key=f"currency/{last_checked}.csv") == False
