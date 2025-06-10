@@ -1,7 +1,7 @@
 
 from src.lambda_handler.transform import (dim_design, check_file_exists_in_ingestion_bucket, dim_currency,
                                           check_file_exists_in_ingestion_bucket, dim_staff, dim_counterparty,
-                                          dim_location)
+                                          dim_location, dim_date)
 
 import pytest
 import boto3
@@ -377,11 +377,26 @@ class TestDimCounterpartyFunction:
         assert set(df_result.columns) == set(df_expected.columns)
 
 
-
-
-@mock_aws
 class TestDimDateFunction:
-    pass
+    def test_dim_date_return_correct_date(self):
+        # input_date = '2022-11-03' # (2022-11-03 14:20:52.186)
+        
+
+        result = dim_date(start='2022-11-03', end ='2022-11-03')
+        print(result)
+
+        assert result  == "dim_date/2025-06-10 15:06:19.959386.parquet"
+        assert result[0]['year'] == 2022
+        assert result[2] == 11
+        assert result['day'] == int(3)
+        assert result['day_of_week']  == 4
+        assert result['day_name'] == 'Thursday'
+        assert result['month_name'] == 'November'
+        assert result['quarter'] == 4
+
+        # start='2020-01-01'
+        # end = '2020-12-31'
+
 
 
 @mock_aws
