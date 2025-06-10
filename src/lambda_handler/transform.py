@@ -216,8 +216,40 @@ def dim_staff(last_checked, ingestion_bucket, processed_bucket):
         raise e
 
 
-def dim_counterparty():
-    pass
+def dim_counterparty(last_checked, ingestion_bucket, processed_bucket, s3_client):
+    
+    key_counterparty = f"counterparty/{last_checked}.csv"
+
+    if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filename=key_counterparty):
+        logger.warning(f"Missing file: {key_counterparty}")
+        return 'Missing staff file'
+
+    s3_client = boto3.client('s3')
+    response = s3_client.list_objects_v2(Bucket=ingestion_bucket, Prefix='address/')
+    address_files = response['Contents']        
+    key_address = max(address_files, key=lambda x: x['LastModified'])['Key']
+    
+
+    counterparty_path = f"s3://{ingestion_bucket}/{key_counterparty}"
+    address_path = f"s3://{ingestion_bucket}/{key_address}"
+
+    counterparty_df = wr.s3.read_csv(counterparty_path)
+    address_df = wr.s3.read_csv(address_path)
+    logger.info("Counterparty and address files loaded successfully.")
+    
+    
+    counterparty_df = counterparty_df.rename(columns={"legal_address_id": "address_id"})
+
+    
+    merged_df = pd.merge(counterparty_df, address_df, on='address_id', how="outer")
+    columns=['Unnamed: 0_x', 'Unnamed: 0_y', 'commercial_contact', 'created_at_x',
+              'delivery_contact', 'last_updated_x', 'address_id',
+              'address_id','created_at_y', 'last_updated_y']
+    dim_counterparty_df = merged_df.drop(columns=columns, axis=1)
+    output_key = f"dim_counterparty/{last_checked}.parquet"
+    wr.s3.to_parquet(dim_counterparty_df, f"s3://{processed_bucket}/{output_key}")
+    logger.info(f"dim_counterparty uploaded successfully to s3://{processed_bucket}/{output_key}")
+    return 'dim_counterparty transformation complete'
 
 
 def check_file_exists_in_ingestion_bucket(bucket, filename):
@@ -247,9 +279,6 @@ def check_file_exists_in_ingestion_bucket(bucket, filename):
             return False
 
 
-    
-def dim_counterparty():
-    pass
 
 
 def dim_date():
