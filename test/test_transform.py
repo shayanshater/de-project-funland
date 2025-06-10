@@ -6,7 +6,7 @@ from src.lambda_handler.transform import (dim_design, check_file_exists_in_inges
 import pytest
 import boto3
 import awswrangler as wr
-from datetime import datetime
+from datetime import datetime, date, time
 import pandas as pd
 from moto import mock_aws
 import os
@@ -385,7 +385,76 @@ class TestDimDateFunction:
 
 @mock_aws
 class TestFactSalesOrderFunction:
-    pass
+    def test_fact_sales_order_function(self, s3_client):
+        #make mocked bucket, ingestion and processed
+        s3_client.create_bucket(
+        Bucket='ingestion-bucket-124-33',
+        CreateBucketConfiguration={
+        'LocationConstraint': 'eu-west-2',
+            },
+        )
+        s3_client.create_bucket(
+        Bucket='processed-bucket-124-33',
+        CreateBucketConfiguration={
+        'LocationConstraint': 'eu-west-2',
+            },
+        )
+
+        file_marker = "1995-01-01 00:00:00.000000"
+
+        sales_order_columns=['sales_order_id', 'created_at',
+        'last_updated', 'design_id',
+         'staff_id','counterparty_id',
+         'units_sold', 'unit_price',
+        'currency_id', 'agreed_delivery_date',
+        'agreed_payment_date','agreed_delivery_location_id']
+
+        new_rows_sales_order=[
+            [2,datetime(2022, 11, 3, 14, 20, 52, 186000),
+            datetime(2022, 11, 3, 14, 20, 52, 186000), 3,
+            19, 8, 
+            42972,Decimal('3.94'),
+            2, '2022-11-07',
+            '2022-11-08', 8]
+        ]
+
+        df_sales=pd.DataFrame(new_rows_sales_order, columns=sales_order_columns)
+        wr.s3.to_csv(df_sales,f"s3://ingestion-bucket-124-33/sales_order/{file_marker}.csv" )
+        
+        fact_sales_order(last_checked, ingestion_bucket, processed_bucket)
+
+        df_result = wr.s3.read_parquet(f"s3://processed-bucket-124-33/fact_sales_order/1995-01-01 00:00:00.000000.parquet")
+        
+        fact_sales_order_columns=[
+        'sales_record_id', 'sales_order_id',
+        'created_date','created_time', 
+        'last_updated_date', 'last_updated_time',
+        'sales_staff_id','counterparty_id',
+        'units_sold', 'unit_price',
+        'currency_id', 'design_id',
+        'agreed_payment_date', 'agreed_delivery_date',
+        'agreed_delivery_location_id']
+        
+        fact_sales_order_new_rows= [
+        [0, 2,
+        date(2022,11,3), time(14, 20, 52), 
+        date(2022,11,3), time(14, 20, 52), 
+        3, 19,
+        8, 42972,
+        Decimal('3.94'), 2 ]]
+         
+        ####look at testing
+        
+        df_expected=pd.DataFrame(fact_sales_order_new_rows, columns=  fact_sales_order_columns)
+        
+        assert list(df_result.values[0]) == list(df_expected.values[0])
+        assert list(df_result.columns.values) == list(df_expected.columns.values)
+       
+       
+       
+       
+       
+
 
 
 @mock_aws          
