@@ -325,7 +325,6 @@ def fact_sales_order(last_checked,ingestion_bucket,processed_bucket):
 
     #change agreed_payment_date from varchar to datetime
     fact_sales_df["agreed_payment_date"] = pd.to_datetime(fact_sales_df["agreed_payment_date"]).dt.date
-    print(fact_sales_df.columns.values)
     #change order of columns
     final_columns = [
         'sales_record_id', 'sales_order_id',
