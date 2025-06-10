@@ -1,25 +1,67 @@
 import logging
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 from datetime import datetime, timezone
 import pandas as pd
 import awswrangler as wr
 import botocore.exceptions
+import json
+import os
+
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
-    """_summary_
+    """Summary:
+    This function will utilise the helper function below. The files will be read from the ingestion bucket (if there are any new ones), and the necessary transformations will be done.
+    the files will be uploaded to the processed bucket and ready to be loaded to the final warehouse.
 
     Args:
-        event (_type_): _description_
-        context (_type_): _description_
+        event (JSON string): This string contains the success message of the last function and the required last_checked/filemarker which we will use to mark our files.
+        context : empty variable
 
     Returns:
-        _type_: _description_
+        dict: which contains the last_checked/filemarker to mark the files to be picked and loaded to the warehouse.
     """
-    pass
+    
+    
+    
+    event = json.dumps(event)
+    last_checked = event['timestamp_to_transform']
+    
+    ingestion_bucket = os.getenv('S3_INGESTION_BUCKET')
+    processed_bucket = os.getenv('S3_PROCESSED_BUCKET')
+    
+    
+    my_config = Config(
+        region_name = 'eu-west-2'
+    )
+    s3_client = boto3.client('s3', config = my_config)
+    
+    start_date = "2020-01-01"
+    end_date = "2030-12-31"
+    
+    fact_sales_order(last_checked, ingestion_bucket, processed_bucket)
+    dim_currency(last_checked, ingestion_bucket, processed_bucket)
+    dim_location(last_checked, ingestion_bucket, processed_bucket)
+    dim_design(last_checked, ingestion_bucket, processed_bucket)
+    dim_staff(last_checked, ingestion_bucket, processed_bucket)
+    dim_counterparty(last_checked, ingestion_bucket, processed_bucket, s3_client)
+    
+    
+    
+    if datetime.now() < datetime(2025, 6, 10, 16, 23, 00): # manually alter this so the time on the right is 10 mins after current time
+        dim_date(start_date, end_date)
+        
+    
+    
+    
+    
+    
+    
 
 
 def dim_currency(last_checked,ingestion_bucket,processed_bucket):
