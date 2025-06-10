@@ -377,24 +377,57 @@ class TestDimCounterpartyFunction:
         assert set(df_result.columns) == set(df_expected.columns)
 
 
+@mock_aws
 class TestDimDateFunction:
-    def test_dim_date_return_correct_date(self):
+    def test_dim_date_returns_correct_date(self):
         #assign
+        file_marker = "1995-01-01 00:00:00.000000"
         start = '2022-11-03'
         end = '2022-11-05'
 
+        s3_client.create_bucket(
+        Bucket='processed-bucket-124-33',
+        CreateBucketConfiguration={
+        'LocationConstraint': 'eu-west-2',
+            },
+        )
+
         #act
-        result = dim_date(start, end)
+        result = dim_date(file_marker, 'processed-bucket-124-33', start, end)
         print(result)
 
+        df_result = wr.s3.read_parquet(f"s3://processed-bucket-124-33/dim_date/1995-01-01 00:00:00.000000.parquet")
+
+        dim_date_columns=[ #write correct columns
+        'counterparty_id', 
+        'counterparty_legal_name', 
+        'counterparty_legal_address_line_1', 
+        'counterparty_legal_address_line_2',
+        'counterparty_legal_district',
+        'counterparty_legal_city', 
+        'counterparty_legal_postal_code', 
+        'counterparty_legal_country', 
+        'counterparty_legal_phone_number' 
+        ]
+  
+        dim_date_rows=[[1, 'Fahey and Sons', #write loop for 3 rows for 3 dates start to end.
+                                    '605 Haskell Trafficway', 'Axel Freeway', 
+                                    'East Bobbie', 'Heard Island and McDonald Islands', 
+                                    None, '9687 937447', '88253-4257']]
+
+        df_expected = pd.DataFrame(dim_date_rows, columns = dim_date_columns)
+
         #assert
-        assert result.iloc[0]['year'] == 2022
-        assert result.iloc[0]['month'] == 11
-        assert result.iloc[0]['day'] == 3
-        assert result.iloc[0]['day_of_week']  == 3
-        assert result.iloc[0]['day_name'] == 'Thursday'
-        assert result.iloc[0]['month_name'] == 'November'
-        assert result.iloc[0]['quarter'] == 4
+        assert list(df_result.values[0]) == list(df_expected.values[0])
+        assert set(df_result.columns) == set(df_expected.columns)
+
+        # assert result.iloc[0]['year'] == 2022
+        # assert result.iloc[0]['month'] == 11
+        # assert result.iloc[0]['day'] == 3
+        # assert result.iloc[0]['day_of_week']  == 3
+        # assert result.iloc[0]['day_name'] == 'Thursday'
+        # assert result.iloc[0]['month_name'] == 'November'
+        # assert result.iloc[0]['quarter'] == 4
 
 
 
