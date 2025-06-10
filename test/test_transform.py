@@ -1,7 +1,7 @@
 
 from src.lambda_handler.transform import (dim_design, check_file_exists_in_ingestion_bucket, dim_currency,
                                           check_file_exists_in_ingestion_bucket, dim_staff, dim_counterparty,
-                                          dim_location)
+                                          dim_location, fact_sales_order)
 
 import pytest
 import boto3
@@ -413,7 +413,7 @@ class TestFactSalesOrderFunction:
             [2,datetime(2022, 11, 3, 14, 20, 52, 186000),
             datetime(2022, 11, 3, 14, 20, 52, 186000), 3,
             19, 8, 
-            42972,Decimal('3.94'),
+            42972,3.94,
             2, '2022-11-07',
             '2022-11-08', 8]
         ]
@@ -421,7 +421,7 @@ class TestFactSalesOrderFunction:
         df_sales=pd.DataFrame(new_rows_sales_order, columns=sales_order_columns)
         wr.s3.to_csv(df_sales,f"s3://ingestion-bucket-124-33/sales_order/{file_marker}.csv" )
         
-        fact_sales_order(last_checked, ingestion_bucket, processed_bucket)
+        fact_sales_order(file_marker, 'ingestion-bucket-124-33' , 'processed-bucket-124-33')
 
         df_result = wr.s3.read_parquet(f"s3://processed-bucket-124-33/fact_sales_order/1995-01-01 00:00:00.000000.parquet")
         
@@ -441,11 +441,11 @@ class TestFactSalesOrderFunction:
         date(2022,11,3), time(14, 20, 52), 
         3, 19,
         8, 42972,
-        Decimal('3.94'), 2 ]]
+        3.94, 2 ]]
          
         ####look at testing
-        
-        df_expected=pd.DataFrame(fact_sales_order_new_rows, columns=  fact_sales_order_columns)
+
+        df_expected=pd.DataFrame(fact_sales_order_new_rows, columns= fact_sales_order_columns)
         
         assert list(df_result.values[0]) == list(df_expected.values[0])
         assert list(df_result.columns.values) == list(df_expected.columns.values)

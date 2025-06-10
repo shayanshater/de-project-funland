@@ -285,7 +285,9 @@ def dim_date():
     pass
 
 
-def fact_sales_order():
+def fact_sales_order(last_checked,ingestion_bucket,processed_bucket):
+    
+    
     
 
      
