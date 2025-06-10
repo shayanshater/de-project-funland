@@ -311,7 +311,6 @@ def dim_date(last_checked, processed_bucket, start='2020-01-01', end='2030-12-31
     df_dim_date["quarter"] = df_dim_date.date_id.dt.quarter
     
     processed_file_key = f"dim_date/{last_checked}.parquet"
-    # return df_dim_date
 
     try:
         wr.s3.to_parquet(df_dim_date, f"s3://{processed_bucket}/{processed_file_key}")
@@ -319,7 +318,7 @@ def dim_date(last_checked, processed_bucket, start='2020-01-01', end='2030-12-31
     except botocore.exceptions.ClientError as client_error:
         logger.error(f"there has been a error in converting to parquet and uploading for dim_date {str(client_error)}")
     finally:
-        return df_dim_date
+        return processed_file_key
 
 
 
