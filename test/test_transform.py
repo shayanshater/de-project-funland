@@ -370,8 +370,8 @@ class TestDimCounterpartyFunction:
                                     None, '9687 937447', '88253-4257']]
 
         df_expected = pd.DataFrame(dim_counterparty_new_rows, columns = dim_counterparty_columns)
-        for val in df_result.values[0]:
-            print(type(val))
+        #for val in df_result.values[0]:
+            #print(type(val))
         assert list(df_result.values[0]) == list(df_expected.values[0])
         assert list(df_result.columns.values) == list(df_expected.columns.values)
 
@@ -432,21 +432,26 @@ class TestFactSalesOrderFunction:
         'sales_staff_id','counterparty_id',
         'units_sold', 'unit_price',
         'currency_id', 'design_id',
-        'agreed_payment_date', 'agreed_delivery_date',
+        'agreed_payment_date', 'agreed_delivery_date', # check 
         'agreed_delivery_location_id']
         
         fact_sales_order_new_rows= [
-        [0, 2,
-        date(2022,11,3), time(14, 20, 52), 
-        date(2022,11,3), time(14, 20, 52), 
-        3, 19,
-        8, 42972,
-        3.94, 2 ]]
+        [2, 2,
+        date(2022,11,3), time(14, 20, 52, 186000), 
+        date(2022,11,3), time(14, 20, 52, 186000), 
+        19, 8,
+        42972, 3.94,
+        2, 3,
+        date(2022,11,8),date(2022,11,7),
+        8]]
          
         ####look at testing
 
         df_expected=pd.DataFrame(fact_sales_order_new_rows, columns= fact_sales_order_columns)
         
+        print(df_result.columns.values)
+        print(df_expected.columns.values)
+
         assert list(df_result.values[0]) == list(df_expected.values[0])
         assert list(df_result.columns.values) == list(df_expected.columns.values)
        

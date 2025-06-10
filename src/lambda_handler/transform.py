@@ -286,8 +286,64 @@ def dim_date():
 
 
 def fact_sales_order(last_checked,ingestion_bucket,processed_bucket):
-    
-    
-    
+       
+    key_sales = f"sales_order/{last_checked}.csv"
 
-     
+    if not check_file_exists_in_ingestion_bucket(bucket=ingestion_bucket, filename=key_sales):
+        logger.warning(f"Missing file: {key_sales}")
+        return 'Missing staff file'
+    
+    file_path_s3 = f's3://{ingestion_bucket}/{key_sales}' 
+    fact_sales_df = wr.s3.read_csv(file_path_s3)
+    fact_sales_df = fact_sales_df.drop(["Unnamed: 0"], axis=1)
+    
+    # SERIAL ID needed for sales_record_id?
+    fact_sales_df["sales_record_id"] = fact_sales_df["sales_order_id"]
+
+    #convert created_at to datetime obj, then split into created_date and created_time
+    fact_sales_df["created_at"] = pd.to_datetime(fact_sales_df["created_at"])
+    for d in fact_sales_df["created_at"]:
+        fact_sales_df["created_date"] = d.date()
+        fact_sales_df["created_time"] = d.time()
+    
+    #convert last_updated to datetime obj, then split into last_updated_date and last_updated_time
+    fact_sales_df["last_updated"] = pd.to_datetime(fact_sales_df["last_updated"])
+    for d in fact_sales_df["last_updated"]:
+        fact_sales_df["last_updated_date"] = d.date()
+        fact_sales_df["last_updated_time"] = d.time()
+    
+    fact_sales_df = fact_sales_df.drop(["created_at"], axis=1)
+    fact_sales_df = fact_sales_df.drop(["last_updated"], axis=1)
+
+    #change sales_id to sales_staff_id
+    #fact_sales_df = fact_sales_df.rename({"staff_id": "sales_staff_id"})
+    fact_sales_df["sales_staff_id"] = fact_sales_df["staff_id"]
+    fact_sales_df = fact_sales_df.drop(["staff_id"], axis=1)
+
+    #change delivery date from varchar to datetime 
+    fact_sales_df["agreed_delivery_date"] = pd.to_datetime(fact_sales_df["agreed_delivery_date"])
+
+    #change agreed_payment_date from varchar to datetime
+    fact_sales_df["agreed_payment_date"] = pd.to_datetime(fact_sales_df["agreed_payment_date"])
+    print(fact_sales_df.columns.values)
+    #change order of columns
+    final_columns = [
+        'sales_record_id', 'sales_order_id',
+        'created_date','created_time', 
+        'last_updated_date', 'last_updated_time',
+        'sales_staff_id','counterparty_id',
+        'units_sold', 'unit_price',
+        'currency_id', 'design_id',
+        'agreed_payment_date', 'agreed_delivery_date',
+        'agreed_delivery_location_id']
+    
+    fact_sales_df = fact_sales_df[final_columns]
+
+    logger.info("fact_sales dataframe has been created")
+
+    output_key = f"fact_sales_order/{last_checked}.parquet"
+    wr.s3.to_parquet(fact_sales_df, f"s3://{processed_bucket}/{output_key}")
+    logger.info(f"fact_sales uploaded successfully to s3://{processed_bucket}/{output_key}")
+    return 'fact_sales transformation complete'
+
+
