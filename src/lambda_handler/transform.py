@@ -242,10 +242,24 @@ def dim_counterparty(last_checked, ingestion_bucket, processed_bucket, s3_client
 
     
     merged_df = pd.merge(counterparty_df, address_df, on='address_id', how="outer")
+    
+    
     columns=['Unnamed: 0_x', 'Unnamed: 0_y', 'commercial_contact', 'created_at_x',
               'delivery_contact', 'last_updated_x', 'address_id',
               'address_id','created_at_y', 'last_updated_y']
     dim_counterparty_df = merged_df.drop(columns=columns, axis=1)
+    
+    
+    dim_counterparty_df = dim_counterparty_df.rename(columns={
+        'address_line_1' : 'counterparty_legal_address_line_1',
+        'address_line_2' : 'counterparty_legal_address_line_2',
+        'city' : 'counterparty_legal_city',
+        'country' : 'counterparty_legal_country',
+        'district' : 'counterparty_legal_district',
+        'phone' : 'counterparty_legal_phone_number',
+        'postal_code' : 'counterparty_legal_postal_code'
+    })
+    
     output_key = f"dim_counterparty/{last_checked}.parquet"
     wr.s3.to_parquet(dim_counterparty_df, f"s3://{processed_bucket}/{output_key}")
     logger.info(f"dim_counterparty uploaded successfully to s3://{processed_bucket}/{output_key}")
@@ -277,8 +291,6 @@ def check_file_exists_in_ingestion_bucket(bucket, filename):
         if ClientError.response["Error"]["Code"] == "404":
             logger.info(f"Key: '{filename}' does not exist!")
             return False
-
-
 
 
 def dim_date():

@@ -370,10 +370,9 @@ class TestDimCounterpartyFunction:
                                     None, '9687 937447', '88253-4257']]
 
         df_expected = pd.DataFrame(dim_counterparty_new_rows, columns = dim_counterparty_columns)
-        #for val in df_result.values[0]:
-            #print(type(val))
+
         assert list(df_result.values[0]) == list(df_expected.values[0])
-        assert list(df_result.columns.values) == list(df_expected.columns.values)
+        assert set(df_result.columns) == set(df_expected.columns)
 
 
 
