@@ -315,16 +315,16 @@ def fact_sales_order(last_checked,ingestion_bucket,processed_bucket):
     fact_sales_df = fact_sales_df.drop(["created_at"], axis=1)
     fact_sales_df = fact_sales_df.drop(["last_updated"], axis=1)
 
-    #change sales_id to sales_staff_id
+      #change sales_id to sales_staff_id
     #fact_sales_df = fact_sales_df.rename({"staff_id": "sales_staff_id"})
     fact_sales_df["sales_staff_id"] = fact_sales_df["staff_id"]
     fact_sales_df = fact_sales_df.drop(["staff_id"], axis=1)
 
     #change delivery date from varchar to datetime 
-    fact_sales_df["agreed_delivery_date"] = pd.to_datetime(fact_sales_df["agreed_delivery_date"])
+    fact_sales_df["agreed_delivery_date"] = pd.to_datetime(fact_sales_df["agreed_delivery_date"]).dt.date
 
     #change agreed_payment_date from varchar to datetime
-    fact_sales_df["agreed_payment_date"] = pd.to_datetime(fact_sales_df["agreed_payment_date"])
+    fact_sales_df["agreed_payment_date"] = pd.to_datetime(fact_sales_df["agreed_payment_date"]).dt.date
     print(fact_sales_df.columns.values)
     #change order of columns
     final_columns = [
