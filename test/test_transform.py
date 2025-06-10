@@ -379,23 +379,22 @@ class TestDimCounterpartyFunction:
 
 class TestDimDateFunction:
     def test_dim_date_return_correct_date(self):
-        # input_date = '2022-11-03' # (2022-11-03 14:20:52.186)
-        
+        #assign
+        start = '2022-11-03'
+        end = '2022-11-05'
 
-        result = dim_date(start='2022-11-03', end ='2022-11-03')
+        #act
+        result = dim_date(start, end)
         print(result)
 
-        assert result  == "dim_date/2025-06-10 15:06:19.959386.parquet"
-        assert result[0]['year'] == 2022
-        assert result[2] == 11
-        assert result['day'] == int(3)
-        assert result['day_of_week']  == 4
-        assert result['day_name'] == 'Thursday'
-        assert result['month_name'] == 'November'
-        assert result['quarter'] == 4
-
-        # start='2020-01-01'
-        # end = '2020-12-31'
+        #assert
+        assert result.iloc[0]['year'] == 2022
+        assert result.iloc[0]['month'] == 11
+        assert result.iloc[0]['day'] == 3
+        assert result.iloc[0]['day_of_week']  == 3
+        assert result.iloc[0]['day_name'] == 'Thursday'
+        assert result.iloc[0]['month_name'] == 'November'
+        assert result.iloc[0]['quarter'] == 4
 
 
 

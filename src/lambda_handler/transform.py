@@ -293,33 +293,30 @@ def check_file_exists_in_ingestion_bucket(bucket, filename):
             return False
 
 
-def dim_date(start='2020-01-01', end='2030-12-31'): #would only need to upload once
+def dim_date(start='2020-01-01', end='2030-12-31'):
     """
     Creates a dim_date table with full range between start and end.
     PK: date_id => FK: created_date, last_updated_date, agreed_payment_date, agreed_delivery_date
     """
-    created_moment = str(datetime.now())
+    # created_moment = str(datetime.now())
 
-    df = pd.DataFrame({"date_id": pd.date_range(start, end)})
-    #date_id
-    df["year"] = df.date_id.dt.year
-    df["month"] = df.date_id.dt.month
-    df["day"] = df.date_id.dt.day
-    df["day_of_week"] = df.date_id.dt.dayofweek        #Monday=0, Sunday=6
-    df["day"] = df.date_id.dt.day_name()
-    df["month_name"] = df.date_id.dt.month_name()
-    df["quarter"] = df.date_id.dt.quarter
+    df_dim_date = pd.DataFrame({"date_id": pd.date_range(start, end)})
+
+    df_dim_date["year"] = df.date_id.dt.year
+    df_dim_date["month"] = df.date_id.dt.month
+    df_dim_date["day"] = df.date_id.dt.day
+    df_dim_date["day_of_week"] = df.date_id.dt.dayofweek        #Monday=0, Sunday=6
+    df_dim_date["day_name"] = df.date_id.dt.day_name()
+    df_dim_date["month_name"] = df.date_id.dt.month_name()
+    df_dim_date["quarter"] = df.date_id.dt.quarter  
     
     processed_file_key = f"dim_date/{created_moment}.parquet"
-    print(df)
 
-    return  processed_file_key
-    # processed_file_key = f"dim_date/{last_checked}.parquet" 
-    # try:
-    #     wr.s3.to_parquet(df, f"s3://{processed_bucket}/{processed_file_key}")
-    #     logger.info(f"dim_date parquet has been uploaded to ingestion s3 at: s3://{processed_bucket}/{processed_file_key}")
-    # except botocore.exceptions.ClientError as client_error:
-    #     logger.error(f"there has been a error in converting to parquet and uploading for dim_date {str(client_error)}")
+    try:
+        wr.s3.to_parquet(df_dim_date, f"s3://{processed_bucket}/{processed_file_key}")
+        logger.info(f"dim_date parquet has been uploaded to ingestion s3 at: s3://{processed_bucket}/{processed_file_key}")
+    except botocore.exceptions.ClientError as client_error:
+        logger.error(f"there has been a error in converting to parquet and uploading for dim_date {str(client_error)}")
 
 
 
