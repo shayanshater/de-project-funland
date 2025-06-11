@@ -29,8 +29,7 @@ def lambda_handler(event, context):
     
     
     
-    event = json.dumps(event)
-    last_checked = event['timestamp_to_transform']
+    last_checked = event['myresult']['timestamp_to_transform']
     
     ingestion_bucket = os.getenv('S3_INGESTION_BUCKET')
     processed_bucket = os.getenv('S3_PROCESSED_BUCKET')
@@ -41,9 +40,6 @@ def lambda_handler(event, context):
     )
     s3_client = boto3.client('s3', config = my_config)
     
-    start_date = "2020-01-01"
-    end_date = "2030-12-31"
-    
     fact_sales_order(last_checked, ingestion_bucket, processed_bucket)
     dim_currency(last_checked, ingestion_bucket, processed_bucket)
     dim_location(last_checked, ingestion_bucket, processed_bucket)
@@ -53,8 +49,8 @@ def lambda_handler(event, context):
     
     
     
-    if datetime.now() < datetime(2025, 6, 10, 16, 23, 00): # manually alter this so the time on the right is 10 mins after current time
-        dim_date(start_date, end_date)
+    if datetime.now() < datetime(2025, 6, 11, 10, 50, 00): # manually alter this so the time on the right is 10 mins after current time
+        dim_date(last_checked = last_checked, processed_bucket = processed_bucket, start='2020-01-01', end='2030-12-31')
         
     
     
@@ -100,7 +96,7 @@ def dim_currency(last_checked,ingestion_bucket,processed_bucket):
     
     #upload to s3 as a parquet file
     try:
-        wr.s3.to_parquet(df_dim_currency,f"s3://{processed_bucket}/currency/{last_checked}.parquet")   #need processed bucket as a argument as well
+        wr.s3.to_parquet(df_dim_currency,f"s3://{processed_bucket}/dim_currency/{last_checked}.parquet")   #need processed bucket as a argument as well
         logger.info(f"dim_currency parquet has been uploaded to ingestion s3 at: s3://{processed_bucket}/currency/{last_checked}.csv")
     except botocore.exceptions.ClientError as client_error:
         logger.error(f"there has been a error in converting to parquet and uploading for dim_design {str(client_error)}")
