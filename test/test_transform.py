@@ -1,7 +1,7 @@
 
 from src.lambda_handler.transform import (dim_design, check_file_exists_in_ingestion_bucket, dim_currency,
                                           check_file_exists_in_ingestion_bucket, dim_staff, dim_counterparty,
-                                          dim_location, fact_sales_order)
+                                          dim_location, fact_sales_order, dim_date)
 
 import pytest
 import boto3
@@ -11,6 +11,7 @@ import pandas as pd
 from moto import mock_aws
 import os
 import numpy as np
+from pandas.testing import assert_series_equal
 
 
 
@@ -375,11 +376,65 @@ class TestDimCounterpartyFunction:
         assert set(df_result.columns) == set(df_expected.columns)
 
 
-
-
 @mock_aws
 class TestDimDateFunction:
-    pass
+    def test_dim_date_returns_correct_date(self, s3_client):
+        # create a processed s3 test bucket
+        s3_client.create_bucket(
+            Bucket='processed-bucket-333-33',
+            CreateBucketConfiguration={
+                'LocationConstraint': 'eu-west-2',
+            },
+        )
+        file_marker = "1995-01-01 00:00:00.000000"
+        # define time period to generate dim_date
+        test_start_date = '2022-11-10'
+        test_end_date = '2022-11-15'
+
+        # act
+        returned_dim_date_path = dim_date(file_marker, 'processed-bucket-333-33', start=test_start_date, end=test_end_date )
+        print(f"File path returned by dim_date: {returned_dim_date_path}")
+
+        # ---- read the Date DFrame from the saved parquet file ------
+        loaded_df = wr.s3.read_parquet(f"s3://processed-bucket-333-33/{returned_dim_date_path}")
+
+
+        # check if the file path is contains '.parquet'
+        assert returned_dim_date_path.endswith('.parquet')
+        # check number of rows and columns
+        assert loaded_df.shape == (6,8)
+        
+        # expected columns
+        date_columns =["date_id", "year", "month", "day", "day_of_week", "day_name", "month_name", "quarter"]
+        # spot check 6 rows
+        expected_values = [
+            [pd.Timestamp('2022-11-10'), 2022, 11, 10, 3, 'Thursday', 'November', 4],
+            [pd.Timestamp('2022-11-11'), 2022, 11, 11, 4, 'Friday', 'November', 4],
+            [pd.Timestamp('2022-11-12'), 2022, 11, 12, 5, 'Saturday', 'November', 4],
+            [pd.Timestamp('2022-11-13'), 2022, 11, 13, 6, 'Sunday', 'November', 4],
+            [pd.Timestamp('2022-11-14'), 2022, 11, 14, 0, 'Monday', 'November', 4],
+            [pd.Timestamp('2022-11-15'), 2022, 11, 15, 1, 'Tuesday', 'November', 4]
+        ]
+
+        # check that the columns named as expected
+        assert list(loaded_df.columns) == date_columns
+        # check that the values as expected
+        for i, expected_row in enumerate(expected_values):
+            expected_series = pd.Series(expected_row, index=date_columns)
+            assert_series_equal(loaded_df.iloc[i], expected_series, check_dtype=False, check_names=False)
+        
+        # # assert individual column values for the specific date (test_start_date = '2022-11-10')
+        # first_row = loaded_df.iloc[0]
+
+        # assert first_row['date_id'] == pd.Timestamp(test_start_date)
+        # assert first_row['year'] == 2022
+        # assert first_row['month'] == 11
+        # assert first_row['day'] == 10       
+        # assert first_row['day_of_week'] == 3        
+        # assert first_row['day_name'] == 'Thursday'  
+        # assert first_row['month_name'] == 'November'
+        # assert first_row['quarter'] == 4
+
 
 
 @mock_aws

@@ -335,8 +335,33 @@ def check_file_exists_in_ingestion_bucket(bucket, filename):
             return False
 
 
-def dim_date():
-    pass
+def dim_date(last_checked, processed_bucket, start='2020-01-01', end='2030-12-31'):
+    """
+    Creates a dim_date table with full range between start and end.
+    PK: date_id => FK: created_date, last_updated_date, agreed_payment_date, agreed_delivery_date
+    """
+    last_checked = str(datetime.now())
+
+    df_dim_date = pd.DataFrame({"date_id": pd.date_range(start, end)})
+
+    df_dim_date["year"] = df_dim_date.date_id.dt.year
+    df_dim_date["month"] = df_dim_date.date_id.dt.month
+    df_dim_date["day"] = df_dim_date.date_id.dt.day
+    df_dim_date["day_of_week"] = df_dim_date.date_id.dt.dayofweek        #Monday=0, Sunday=6
+    df_dim_date["day_name"] = df_dim_date.date_id.dt.day_name()
+    df_dim_date["month_name"] = df_dim_date.date_id.dt.month_name()
+    df_dim_date["quarter"] = df_dim_date.date_id.dt.quarter
+    
+    processed_file_key = f"dim_date/{last_checked}.parquet"
+
+    try:
+        wr.s3.to_parquet(df_dim_date, f"s3://{processed_bucket}/{processed_file_key}")
+        logger.info(f"dim_date parquet has been uploaded to ingestion s3 at: s3://{processed_bucket}/{processed_file_key}")
+    except botocore.exceptions.ClientError as client_error:
+        logger.error(f"there has been a error in converting to parquet and uploading for dim_date {str(client_error)}")
+    finally:
+        return processed_file_key
+
 
 
 def fact_sales_order(last_checked,ingestion_bucket,processed_bucket):
