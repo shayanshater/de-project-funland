@@ -14,7 +14,9 @@ This repository contains the final team project of the North Coders Data Enginee
 
 - Business dashboards and insights delivered through Tableau.
 
-## Tech Stack - Hari
+![ETL Pipeline](images/mvpro.png)
+
+## Tech Stack
 
 **Python:**\
 awswrangler 3.12.0 \
@@ -31,6 +33,13 @@ urllib3 2.4.0
 
 ## Installation 
 
+To install this project, run:
+
+```bash
+git clone https://github.com/sapkotahari/de-project-funland
+cd de-project-funland
+```
+
 Create a virtual environment 
 
 ```python 
@@ -45,28 +54,9 @@ source venv/bin/activate
 Required packages are listed in our requirements.txt and can be installed using our makefile. 
 
 ```bash
-make -f makefile
+make requirements
 ``` 
-
-**Terraform** 
-
-Initialise Terraform 
-
-```bash
-cd terraform
-terraform init 
-```
-Backend has been set up to store the statefile separately. This can be reviewed in terraform/main.tf
-
-Terraform can be run using the following commands: 
-```bash 
-terraform plan 
-terraform apply
-```
-
-    
-## Usage/Examples  - Shayan
-
+## Usage/Examples
 Firstly, activate your virtual environment
 
 ```bash
@@ -81,7 +71,19 @@ export AWS_SECRET_ACCESS_KEY=<your secret access key>
 export AWS_DEFAULT_REGION=<your default region>
 ```
 
-An aws parameter needs to be put into parameter store with a parameter name of "last_checked". This parameter is a date in the format "YYYY-MM-DD HH:MM:SS:ffffff". This date should be some date before 2019, to ensure that all the data gets extracted from the database initially.
+An AWS parameter needs to be put into parameter store with a parameter name of "last_checked". This parameter is a date in the format "YYYY-MM-DD HH:MM:SS:ffffff". This date should be some date before 2019, to ensure that all the data gets extracted from the database initially.\ 
+
+In AWS secret manager, your should set up a secret with the name "db_creds" with 4 key value pairs e.g.:
+
+```console
+{
+"DB_USER":<your database username>,
+"DB_PASSWORD":<your database password>,
+"DB_HOST":<your database host>,
+"DB_NAME":<your database name>,
+"DB_PORT":<your database port>
+}
+```
 
 
 Now your aws account is linked to your local terminal and you are ready to navigate to the terraform directory
@@ -142,7 +144,23 @@ And checking the AWS console for our state machine we can see:
 
 
 
-## Running Tests - Elisa
+## Running Tests
+
+Setup an .env file with the following values:
+
+```console
+totesys_user=<your database username >
+totesys_password=<your database password>
+totesys_database=<your database database>
+totesys_host=<your database host>
+totesys_port=<your database port>
+```
+
+Add the given PYTHONPATH to your environment variables:
+
+```bash
+export PYTHONPATH=$(pwd)
+```
 
 
 To run tests, run the following command:
@@ -158,13 +176,22 @@ To run all checks (tests, linting, security and coverage), run the following com
 
 
 
-## Visuals - Hari
+## Visuals
 
-![ETL Pipeline](images/mvpro.png)
 ![Map](images/Map.png)
+A graphic representation showing the countries where the products are sold. The size of the dot corresponds to sales in the corresponding country.
+
+
 ![Sales by Country](images/CountrySales.png)
+A graph showing sales for each country for the years 2023 and 2024.
+
+
 ![Sales by City](images/CitySales.png)
+A graph showing sales for each city for the years 2023 and 2024.
+
+
 ![Sales by Month](images/SalesMonth.png)
+A graph showing total sales by month.
 
 
 ## Acknowledgements
@@ -184,7 +211,7 @@ We also used the following resources and tools throughout the project:
 - [@Leda909](https://github.com/Leda909)
 - [@lisa624](https://github.com/lisa624)
 - [@sapkotahari](https://github.com/sapkotahari)
-- [@sarah-larkin] (https://github.com/sarah-larkin)
+- [@sarah-larkin](https://github.com/sarah-larkin)
 - [@shayanshater](https://github.com/shayanshater)
 
 
