@@ -43,13 +43,79 @@ Install my-project with npm
     
 ## Usage/Examples  - Shayan
 
-```javascript
-import Component from 'my-project'
+Firstly, activate your virtual environment
 
-function App() {
-  return <Component />
-}
+```bash
+source venv/bin/activate
 ```
+
+To use AWS services and infrastructure, sign up to a AWS account and create a IAM user. Once this is done, extract your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
+
+```bash
+export AWS_ACCESS_KEY_ID=<your key id>
+export AWS_SECRET_ACCESS_KEY=<your secret access key>
+export AWS_DEFAULT_REGION=<your default region>
+```
+
+An aws parameter needs to be put into parameter store with a parameter name of "last_checked". This parameter is a date in the format "YYYY-MM-DD HH:MM:SS:ffffff". This date should be some date before 2019, to ensure that all the data gets extracted from the database initially.
+
+
+Now your aws account is linked to your local terminal and you are ready to navigate to the terraform directory
+
+```bash
+cd terraform
+```
+
+In this directory, an initialisation is needed to download the required hashicorp version and to setup the location of the terraform state file remotely. To accomplish this, we run:
+
+```bash
+terraform init
+```
+
+Once this finished, we are ready to see a plan of the infrastructure and its availability:
+
+```bash
+terraform plan
+```
+
+Be sure that all the information looks correct, and we are ready to deploy!! Run:
+
+```bash
+terraform apply
+```
+
+All the infrastructure should be created (ingestion and processed buckets, ETL lambdas and a step function to facilitate them, alongside the necessary roles and cloudwatch logs and notification systems):
+
+```console
+
+Apply complete! Resources: 1 added, 0 changed, 1 destroyed.
+
+Outputs:
+
+notification_email = "<email to receive error notifications>"
+
+```
+
+
+To see the infrastructure, we can use AWS CLI to view our buckets:
+
+```bash
+aws s3 ls
+```
+
+
+example output:
+
+```console
+2025-05-28 10:24:59 <ingestion-bucket-name>
+2025-05-28 10:24:59 <processed-bucket-name>
+```
+
+And checking the AWS console for our state machine we can see:
+
+![Alt text](/images/SF_image.png "This is a image of the state machine after it has ran a ETL process.")
+
+
 
 
 ## Running Tests - Elisa
