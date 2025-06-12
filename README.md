@@ -14,22 +14,44 @@ This repository contains the final team project of the North Coders Data Enginee
 
 - Business dashboards and insights delivered through Tableau.
 
+
 ![ETL Pipeline](images/mvpro.png)
 
-## Tech Stack
+## Technologyies and packages
 
-**Python:**\
-awswrangler 3.12.0 \
-boto3 1.38.24 \
-pandas 2.3.0 \
-pg8000 1.31.2 \
-pytest 8.3.5 \
-urllib3 2.4.0
+<p align="center">
+    <!-- Python -->
+    <a href="https://www.python.org/" target="_blank" rel="noreferrer" style="margin: 25px;">
+    <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg" alt="python" width="100px" height="100px"/>
+    </a>
+    <!-- Terraform -->
+    <a href="https://www.terraform.io/" target="_blank" rel="noreferrer" style="margin: 25px;">
+    <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/terraform/terraform-original.svg" alt="terraform" width="100px" height="100px"/>
+    </a>
+    <!-- Amazon -->
+    <a href="https://aws.amazon.com/" target="_blank" rel="noreferrer" style="margin: 25px;">
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT_6owgj8w4Bpwc1q2BNQdQ0z_LqBLw-XB0Fg&s" alt="aws" width="100px" height="100px"/>
+    </a>
+    <!-- Github Action -->
+    <a href="https://github.com/features/actions" target="_blank" rel="noreferrer" style="margin: 25px;">
+    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTeELfqnsZAFa7QU00kjkio5nwkEP9uilZVyg&s" alt="github actions" width="100px" height="100px"/>
+    </a>
+    <!-- Git -->
+    <a href="https://git-scm.com/" target="_blank" rel="noreferrer" style="margin: 25px;">
+    <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/git/git-original.svg" alt="git" width="100px" height="100px"/>
+    </a>
+</p>
 
-**Terraform**\
-**Git**
-
-
+<!-- Python packages list -->
+### Python packages:
+<ul>
+  <li>awswrangler 3.12.0</li>
+  <li>boto3 1.38.24</li>
+  <li>pandas 2.3.0</li>
+  <li>pg8000 1.31.2</li>
+  <li>pytest 8.3.5</li>
+  <li>urllib3 2.4.0</li>
+</ul>
 
 ## Installation 
 
@@ -202,7 +224,7 @@ We would like to acknowledge **[Northcoders](https://www.northcoders.com/)** for
 We also used the following resources and tools throughout the project:
 - [Pandas](https://pandas.pydata.org/docs/index.html) - For data sanitising.
 - [Boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) - The Amazon Web Services (AWS) SDK for Python, used extensively for interacting with AWS services.
-- [Terraform Official Documentation](https://developer.hashicorp.com/terraform/docs) - Comprehensive and clear documentation that helped in managing infrastructure as code.
+- [Terraform](https://developer.hashicorp.com/terraform/docs) - Comprehensive and clear documentation that helped in managing infrastructure as code.
 - [AWS Wrangler](https://aws-data-wrangler.readthedocs.io/en/stable/) - A Python library that made working with AWS data services much easier.
 
 
