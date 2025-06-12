@@ -90,9 +90,9 @@ To run tests, run the following command
 
 ![ETL Pipeline](images/mvp.png)
 ![Map](images/Map.png)
-![Sales by Country](images/Country - Sales.png)
-![Sales by City](images/City - Sales.png)
-![Sales by Month](images/Sales - Month.png)
+![Sales by Country](images/CountrySales.png)
+![Sales by City](images/CitySales.png)
+![Sales by Month](images/SalesMonth.png)
 
 
 ## Acknowledgements
