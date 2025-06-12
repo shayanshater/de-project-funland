@@ -61,6 +61,12 @@ terraform init
 ```
 Backend has been set up to store the statefile separately. This can be reviewed in terraform/main.tf
 
+Terraform can be run using the following commands: 
+```bash 
+terraform plan 
+terraform apply
+```
+
     
 ## Usage/Examples  - Shayan
 
@@ -97,10 +103,9 @@ AWS Step function and visualisation
 
 ## Authors
 
-- [@octokatherine](https://www.github.com/octokatherine)
 - [@Leda909](https://github.com/Leda909)
 - [@lisa624](https://github.com/lisa624)
-- [@sapkotahar](https://github.com/sapkotahari)
+- [@sapkotahari](https://github.com/sapkotahari)
 - [@sarah-larkin] (https://github.com/sarah-larkin)
 - [@shayanshater](https://github.com/shayanshater)
 
