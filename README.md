@@ -95,7 +95,7 @@ To run all checks (tests, linting, security and coverage), run the following com
 
 ## Visuals - Hari
 
-![ETL Pipeline](images/mvp.png)
+![ETL Pipeline](images/mvpro.png)
 ![Map](images/Map.png)
 ![Sales by Country](images/CountrySales.png)
 ![Sales by City](images/CitySales.png)
