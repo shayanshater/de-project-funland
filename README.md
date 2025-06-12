@@ -79,11 +79,18 @@ function App() {
 
 ## Running Tests - Elisa
 
-To run tests, run the following command
+
+To run tests, run the following command:
 
 ```bash
-  npm run test
+   make unit-test
 ```
+To run all checks (tests, linting, security and coverage), run the following command:
+
+```bash
+   make run-checks
+```
+
 
 
 ## Visuals - Hari
