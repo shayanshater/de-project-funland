@@ -1,7 +1,6 @@
 # Data Engineering Project - Funland Team
 
 This repository contains the final team project of the North Coders Data Engineering Bootcamp, showcasing a full-stack ETL (Extract, Transform, Load) pipeline designed for real-world data engineering practice.
-Apply Agile development methodology, use project management tools such as Trello and Slack.
 
 - Data ingestion from PostgreSQL into AWS S3 data lakes.
 
@@ -145,16 +144,23 @@ And checking the AWS console for our state machine we can see:
 
 ## Running Tests - Elisa
 
-To run tests, run the following command
+
+To run tests, run the following command:
 
 ```bash
-  npm run test
+   make unit-test
 ```
+To run all checks (tests, linting, security and coverage), run the following command:
+
+```bash
+   make run-checks
+```
+
 
 
 ## Visuals - Hari
 
-![ETL Pipeline](images/mvp.png)
+![ETL Pipeline](images/mvpro.png)
 ![Map](images/Map.png)
 ![Sales by Country](images/CountrySales.png)
 ![Sales by City](images/CitySales.png)
