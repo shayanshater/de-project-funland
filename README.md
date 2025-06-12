@@ -1,45 +1,70 @@
-# Data Engineering Funland Team Project
+# Data Engineering Project - Funland Team
 
-## Overview
+This repository contains the final team project of the North Coders Data Engineering Bootcamp, showcasing a full-stack ETL (Extract, Transform, Load) pipeline designed for real-world data engineering practice.
+Apply Agile development methodology, use project management tools such as Trello and Slack.
 
-This repository contains the implementation of a data engineering pipeline designed to simulate an end-to-end ETL (Extract, Transform, Load) solution. The system ingests data from an operational database, sanitize and transforms the data into a star-schema data warehouse, and provides visualizations for business intelligence purposes.
+- Data ingestion from PostgreSQL into AWS S3 data lakes.
 
-The project is built on AWS cloud services, leverages infrastructure-as-code, incorporates best practices in cloud monitoring, error logging, security, and aims to demonstrate a production-like, resilient data platform.
+- Transformation into star-schema format using pandas and awswrangler.
 
-## Objectives
+- Deployment managed with Infrastructure-as-Code (Terraform).
 
-    *   Follow clean code principles: structured repository layout, consistent file naming conventions, modular design, and PEP8-compliant codebase.
-    *   Apply Agile development methodology, use project management tools such as Trello and Slack.
-    *   Implement Continuous Integration / Continuous Deployment (CI/CD) pipelines using GitHub Actions and Makefiles to automate testing, security and deployment processes.
-    *   Apply Test-Driven Development (TDD) approach to ensure reliable and maintainable code with test coverage.
-    *   Provision infrastructure using Infrastructure-as-Code (IaC) with Terraform to enable repeatable, version-controlled cloud resource deployment.
-    *   Develop data pipelines to extract data from a PostgreSQL relational database and ingest it into AWS S3-based data lakes.
-    *   Sanitize, transform, and remodel ingested data into a star-schema data warehouse model using pandas and awswrangler.
-    *   Load transformed data into an AWS-hosted data warehouse (e.g. Redshift or PostgreSQL warehouse).
-    *   Implement robust monitoring, alerting, and centralized logging via AWS CloudWatch and SNS to ensure pipeline observability.
-    *   Build visualizations and business intelligence dashboards using Tableau for business reporting and insights.
+- Automated testing and deployment with CI/CD pipelines via GitHub Actions and Makefile.
 
+- Monitoring, logging, and alerts integrated via AWS CloudWatch and SNS.
 
-# Project Title - Adel
-
-A brief description of what this project does and who it's for
-
+- Business dashboards and insights delivered through Tableau.
 
 ## Tech Stack - Hari
 
-**Client:** React, Redux, TailwindCSS
+**Python:**\
+awswrangler 3.12.0 \
+boto3 1.38.24 \
+pandas 2.3.0 \
+pg8000 1.31.2 \
+pytest 8.3.5 \
+urllib3 2.4.0
 
-**Server:** Node, Express
+**Terraform**\
+**Git**
 
 
-## Installation - Sarah
 
-Install my-project with npm
+## Installation 
+
+Create a virtual environment 
+
+```python 
+python -m venv venv 
+```
+Activate your venv
+
+```python 
+source venv/bin/activate
+```
+**Install packages** <br><br>
+Required packages are listed in our requirements.txt and can be installed using our makefile. 
 
 ```bash
-  npm install my-project
-  cd my-project
+make -f makefile
+``` 
+
+**Terraform** 
+
+Initialise Terraform 
+
+```bash
+cd terraform
+terraform init 
 ```
+Backend has been set up to store the statefile separately. This can be reviewed in terraform/main.tf
+
+Terraform can be run using the following commands: 
+```bash 
+terraform plan 
+terraform apply
+```
+
     
 ## Usage/Examples  - Shayan
 
@@ -127,23 +152,34 @@ To run tests, run the following command
 ```
 
 
-## Screenshots - Hari
-AWS Step function and visualisation
+## Visuals - Hari
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
-
-
-## Acknowledgements - Adel
-
- - [Awesome Readme Templates](https://awesomeopensource.com/project/elangosundar/awesome-README-templates)
- - [Awesome README](https://github.com/matiassingers/awesome-readme)
- - [How to write a Good readme](https://bulldogjob.com/news/449-how-to-write-a-good-readme-for-your-github-project)
+![ETL Pipeline](images/mvp.png)
+![Map](images/Map.png)
+![Sales by Country](images/CountrySales.png)
+![Sales by City](images/CitySales.png)
+![Sales by Month](images/SalesMonth.png)
 
 
-## Authors - Sarah
+## Acknowledgements
 
-- [@octokatherine](https://www.github.com/octokatherine)
+We would like to acknowledge **[Northcoders](https://www.northcoders.com/)** for providing the **Data Engineering Bootcamp**, which was instrumental in building the foundations for this project.  
 
+
+We also used the following resources and tools throughout the project:
+- [Pandas](https://pandas.pydata.org/docs/index.html) - For data sanitising.
+- [Boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) - The Amazon Web Services (AWS) SDK for Python, used extensively for interacting with AWS services.
+- [Terraform Official Documentation](https://developer.hashicorp.com/terraform/docs) - Comprehensive and clear documentation that helped in managing infrastructure as code.
+- [AWS Wrangler](https://aws-data-wrangler.readthedocs.io/en/stable/) - A Python library that made working with AWS data services much easier.
+
+
+## Authors
+
+- [@Leda909](https://github.com/Leda909)
+- [@lisa624](https://github.com/lisa624)
+- [@sapkotahari](https://github.com/sapkotahari)
+- [@sarah-larkin] (https://github.com/sarah-larkin)
+- [@shayanshater](https://github.com/shayanshater)
 
 
 
