@@ -17,15 +17,15 @@ Apply Agile development methodology, use project management tools such as Trello
 
 ## Tech Stack - Hari
 
-**Python:**
-awswrangler 3.12.0
-boto3 1.38.24
-pandas 2.3.0
-pg8000 1.31.2
-pytest 8.3.
+**Python:**\
+awswrangler 3.12.0 \
+boto3 1.38.24 \
+pandas 2.3.0 \
+pg8000 1.31.2 \
+pytest 8.3.5 \
 urllib3 2.4.0
 
-**Terraform**
+**Terraform**\
 **Git**
 
 
