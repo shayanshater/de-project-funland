@@ -44,14 +44,14 @@ Activate your venv
 ```python 
 source venv/bin/activate
 ```
-Install packages <br>
+**Install packages** <br><br>
 Required packages are listed in our requirements.txt and can be installed using our makefile. 
 
 ```bash
 make -f makefile
 ``` 
 
-###Terraform 
+**Terraform** 
 
 Initialise Terraform 
 
