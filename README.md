@@ -20,16 +20,24 @@ The project is built on AWS cloud services, leverages infrastructure-as-code, in
     *   Build visualizations and business intelligence dashboards using Tableau for business reporting and insights.
 
 
-# Project Title - Adel
+## Project Title - Adel
 
 A brief description of what this project does and who it's for
 
 
 ## Tech Stack - Hari
 
-**Client:** React, Redux, TailwindCSS
+**Python:**
+awswrangler 3.12.0
+boto3 1.38.24
+pandas 2.3.0
+pg8000 1.31.2
+pytest 8.3.
+urllib3 2.4.0
 
-**Server:** Node, Express
+**Terraform**
+**Git**
+
 
 
 ## Installation 
@@ -88,10 +96,16 @@ To run tests, run the following command
 ```
 
 
-## Screenshots - Hari
-AWS Step function and visualisation
+## Visuals - Hari
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+![ETL Pipeline](images/mvp.png)
+![Map](images/Map.png)
+![Sales by Country](images/Country - Sales.png)
+![Sales by City](images/City - Sales.png)
+![Sales by Month](images/Sales - Month.png)
+
+
+
 
 
 ## Acknowledgements - Adel
