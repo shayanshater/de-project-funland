@@ -32,14 +32,35 @@ A brief description of what this project does and who it's for
 **Server:** Node, Express
 
 
-## Installation - Sarah
+## Installation 
 
-Install my-project with npm
+Create a virtual environment 
+
+```python 
+python -m venv venv 
+```
+Activate your venv
+
+```python 
+source venv/bin/activate
+```
+Install packages <br>
+Required packages are listed in our requirements.txt and can be installed using our makefile. 
 
 ```bash
-  npm install my-project
-  cd my-project
+make -f makefile
+``` 
+
+###Terraform 
+
+Initialise Terraform 
+
+```bash
+cd terraform
+terraform init 
 ```
+Backend has been set up to store the statefile separately. This can be reviewed in terraform/main.tf
+
     
 ## Usage/Examples  - Shayan
 
@@ -74,10 +95,14 @@ AWS Step function and visualisation
  - [How to write a Good readme](https://bulldogjob.com/news/449-how-to-write-a-good-readme-for-your-github-project)
 
 
-## Authors - Sarah
+## Authors
 
 - [@octokatherine](https://www.github.com/octokatherine)
-
+- [@Leda909](https://github.com/Leda909)
+- [@lisa624](https://github.com/lisa624)
+- [@sapkotahar](https://github.com/sapkotahari)
+- [@sarah-larkin] (https://github.com/sarah-larkin)
+- [@shayanshater](https://github.com/shayanshater)
 
 
 
