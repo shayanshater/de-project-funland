@@ -1,7 +1,6 @@
 # Data Engineering Project - Funland Team
 
 This repository contains the final team project of the North Coders Data Engineering Bootcamp, showcasing a full-stack ETL (Extract, Transform, Load) pipeline designed for real-world data engineering practice.
-Apply Agile development methodology, use project management tools such as Trello and Slack.
 
 - Data ingestion from PostgreSQL into AWS S3 data lakes.
 
