@@ -319,6 +319,21 @@ def dim_counterparty(last_checked, ingestion_bucket, processed_bucket, s3_client
         'postal_code' : 'counterparty_legal_postal_code'
     })
     
+    
+    dim_counterparty_columns=[
+        'counterparty_id', 
+        'counterparty_legal_name', 
+        'counterparty_legal_address_line_1', 
+        'counterparty_legal_address_line_2',
+        'counterparty_legal_district',
+        'counterparty_legal_city', 
+        'counterparty_legal_postal_code', 
+        'counterparty_legal_country', 
+        'counterparty_legal_phone_number' 
+        ]
+    
+    dim_counterparty_df = dim_counterparty_df[dim_counterparty_columns]
+    
     output_key = f"dim_counterparty/{last_checked}.parquet"
     wr.s3.to_parquet(dim_counterparty_df, f"s3://{processed_bucket}/{output_key}")
     logger.info(f"dim_counterparty uploaded successfully to s3://{processed_bucket}/{output_key}")
@@ -340,7 +355,6 @@ def dim_date(last_checked, processed_bucket, start='2020-01-01', end='2030-12-31
     df_dim_date["year"] = df_dim_date.date_id.dt.year
     df_dim_date["month"] = df_dim_date.date_id.dt.month
     df_dim_date["day"] = df_dim_date.date_id.dt.day
-    df_dim_date["day_of_week"] = df_dim_date.date_id.dt.dayofweek        #Monday=0, Sunday=6
     df_dim_date["day_name"] = df_dim_date.date_id.dt.day_name()
     df_dim_date["month_name"] = df_dim_date.date_id.dt.month_name()
     df_dim_date["quarter"] = df_dim_date.date_id.dt.quarter

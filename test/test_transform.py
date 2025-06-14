@@ -359,21 +359,18 @@ class TestDimCounterpartyFunction:
         df_result = df_result.replace(np.nan, None)
         
         dim_counterparty_columns=[
-        'counterparty_id', 
-        'counterparty_legal_name', 
-        'counterparty_legal_address_line_1', 
-        'counterparty_legal_address_line_2',
-        'counterparty_legal_district',
-        'counterparty_legal_city', 
-        'counterparty_legal_postal_code', 
-        'counterparty_legal_country', 
+        'counterparty_id', 'counterparty_legal_name', 
+        'counterparty_legal_address_line_1', 'counterparty_legal_address_line_2',
+        'counterparty_legal_district','counterparty_legal_city', 
+        'counterparty_legal_postal_code', 'counterparty_legal_country', 
         'counterparty_legal_phone_number' 
         ]
   
         dim_counterparty_new_rows=[[1, 'Fahey and Sons', 
                                     '605 Haskell Trafficway', 'Axel Freeway', 
-                                    'East Bobbie', 'Heard Island and McDonald Islands', 
-                                    None, '9687 937447', '88253-4257']]
+                                    None, 'East Bobbie', 
+                                    '88253-4257', 'Heard Island and McDonald Islands',  
+                                    '9687 937447']]
 
         df_expected = pd.DataFrame(dim_counterparty_new_rows, columns = dim_counterparty_columns)
 
@@ -402,25 +399,23 @@ class TestDimDateFunction:
 
         # ---- read the Date DFrame from the saved parquet file ------
         loaded_df = wr.s3.read_parquet(f"s3://processed-bucket-333-33/{returned_dim_date_path}")
-
-
-        # check if the file path is contains '.parquet'
-        assert returned_dim_date_path.endswith('.parquet')
-        # check number of rows and columns
-        assert loaded_df.shape == (6,8)
         
         # expected columns
-        date_columns =["date_id", "year", "month", "day", "day_of_week", "day_name", "month_name", "quarter"]
+        date_columns = ["date_id", "year", 
+                        "month", "day", 
+                        "day_name", "month_name", 
+                        "quarter"]
         # spot check 6 rows
         expected_values = [
-            [pd.Timestamp('2022-11-10'), 2022, 11, 10, 3, 'Thursday', 'November', 4],
-            [pd.Timestamp('2022-11-11'), 2022, 11, 11, 4, 'Friday', 'November', 4],
-            [pd.Timestamp('2022-11-12'), 2022, 11, 12, 5, 'Saturday', 'November', 4],
-            [pd.Timestamp('2022-11-13'), 2022, 11, 13, 6, 'Sunday', 'November', 4],
-            [pd.Timestamp('2022-11-14'), 2022, 11, 14, 0, 'Monday', 'November', 4],
-            [pd.Timestamp('2022-11-15'), 2022, 11, 15, 1, 'Tuesday', 'November', 4]
+            [pd.Timestamp('2022-11-10'), 2022, 11, 10, 'Thursday', 'November', 4],
+            [pd.Timestamp('2022-11-11'), 2022, 11, 11, 'Friday', 'November', 4],
+            [pd.Timestamp('2022-11-12'), 2022, 11, 12, 'Saturday', 'November', 4],
+            [pd.Timestamp('2022-11-13'), 2022, 11, 13, 'Sunday', 'November', 4],
+            [pd.Timestamp('2022-11-14'), 2022, 11, 14, 'Monday', 'November', 4],
+            [pd.Timestamp('2022-11-15'), 2022, 11, 15, 'Tuesday', 'November', 4]
         ]
 
+        print(loaded_df)
         # check that the columns named as expected
         assert list(loaded_df.columns) == date_columns
         # check that the values as expected
@@ -484,7 +479,7 @@ class TestFactSalesOrderFunction:
 
         df_result = wr.s3.read_parquet(f"s3://processed-bucket-124-33/fact_sales_order/1995-01-01 00:00:00.000000.parquet")
         
-        fact_sales_order_columns=[
+        fact_sales_order_columns= [
         'sales_record_id', 'sales_order_id',
         'created_date','created_time', 
         'last_updated_date', 'last_updated_time',

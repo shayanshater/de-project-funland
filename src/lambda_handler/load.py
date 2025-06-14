@@ -47,12 +47,11 @@ def lambda_handler(event, context):
     
     
 
-    if dim_date is empty:
-        logger.info("dim_date has started loading")
-        load_dim_date()
-        logger.info("dim_date has finished loading")
-    else:
-        logger.info("dim_date has already loaded previously")
+
+    logger.info("dim_date has started loading")
+    load_dim_date()
+    logger.info("dim_date has finished loading")
+
 
     logger.info("fact_sales_order has started loading")
     load_fact_sales_order()
@@ -68,7 +67,7 @@ def load_dim_staff(last_checked, processed_bucket, db_conn):
     file_key = f"dim_staff/{last_checked}.parquet"
     
     if not check_file_exists_in_ingestion_bucket(bucket= processed_bucket, filename= file_key):
-        logger.warn(f"{file_key} was not found for this run")
+        logger.warning(f"{file_key} was not found for this run")
         return f"{file_key} was not found for this run"
     
     
@@ -94,7 +93,7 @@ def load_dim_location(last_checked, processed_bucket, db_conn):
     
     
     if not check_file_exists_in_ingestion_bucket(bucket= processed_bucket, filename= file_key):
-        logger.warn(f"{file_key} was not found for this run")
+        logger.warning(f"{file_key} was not found for this run")
         return f"{file_key} was not found for this run"
     
     logger.info(f"beginning to read parquet file for dim_location from {processed_bucket}")
@@ -121,7 +120,7 @@ def load_dim_currency(last_checked, processed_bucket, db_conn):
     
     
     if not check_file_exists_in_ingestion_bucket(bucket= processed_bucket, filename= file_key):
-        logger.warn(f"{file_key} was not found for this run")
+        logger.warning(f"{file_key} was not found for this run")
         return f"{file_key} was not found for this run"
     
     logger.info(f"beginning to read parquet file for dim_currency from {processed_bucket}")
@@ -140,7 +139,105 @@ def load_dim_currency(last_checked, processed_bucket, db_conn):
     )
     logger.info(f"finished loading dim_currency")
     
+def load_dim_design(last_checked, processed_bucket, db_conn):
+    file_key = f"dim_design/{last_checked}.parquet"
     
+    
+    if not check_file_exists_in_ingestion_bucket(bucket= processed_bucket, filename= file_key):
+        logger.warning(f"{file_key} was not found for this run")
+        return f"{file_key} was not found for this run"
+    
+    logger.info(f"beginning to read parquet file for dim_design from {processed_bucket}")
+    df = wr.s3.read_parquet(
+        f"s3://{processed_bucket}/{file_key}"
+    )
+    logger.info(f"finished reading parquet file for dim_design from {processed_bucket}")
+    
+    
+    logger.info(f"loading dim_design in warehouse")
+    wr.postgresql.to_sql(
+        df = df,
+        table= 'dim_design',
+        schema='public',
+        con=db_conn
+    )
+    logger.info(f"finished loading dim_design")
+    
+    
+def load_dim_counterparty(last_checked, processed_bucket, db_conn):
+    file_key = f"dim_counterparty/{last_checked}.parquet"
+    
+    
+    if not check_file_exists_in_ingestion_bucket(bucket= processed_bucket, filename= file_key):
+        logger.warning(f"{file_key} was not found for this run")
+        return f"{file_key} was not found for this run"
+    
+    logger.info(f"beginning to read parquet file for dim_counterparty from {processed_bucket}")
+    df = wr.s3.read_parquet(
+        f"s3://{processed_bucket}/{file_key}"
+    )
+    logger.info(f"finished reading parquet file for dim_counterparty from {processed_bucket}")
+    
+    
+    logger.info(f"loading dim_counterparty in warehouse")
+    wr.postgresql.to_sql(
+        df = df,
+        table= 'dim_counterparty',
+        schema='public',
+        con=db_conn
+    )
+    logger.info(f"finished loading dim_counterparty")
+    
+    
+def load_dim_date(last_checked, processed_bucket, db_conn):
+    file_key = f"dim_date/{last_checked}.parquet"
+    
+    
+    if not check_file_exists_in_ingestion_bucket(bucket= processed_bucket, filename= file_key):
+        logger.warning(f"{file_key} was not found for this run")
+        return f"{file_key} was not found for this run"
+    
+    logger.info(f"beginning to read parquet file for dim_date from {processed_bucket}")
+    df = wr.s3.read_parquet(
+        f"s3://{processed_bucket}/{file_key}"
+    )
+    logger.info(f"finished reading parquet file for dim_date from {processed_bucket}")
+    
+    
+    logger.info(f"loading dim_date in warehouse")
+    wr.postgresql.to_sql(
+        df = df,
+        table= 'dim_date',
+        schema='public',
+        con=db_conn
+    )
+    logger.info(f"finished loading dim_date")
+    
+    
+    
+def load_fact_sales_order(last_checked, processed_bucket, db_conn):
+    file_key = f"fact_sales_order/{last_checked}.parquet"
+    
+    
+    if not check_file_exists_in_ingestion_bucket(bucket= processed_bucket, filename= file_key):
+        logger.warning(f"{file_key} was not found for this run")
+        return f"{file_key} was not found for this run"
+    
+    logger.info(f"beginning to read parquet file for fact_sales_order from {processed_bucket}")
+    df = wr.s3.read_parquet(
+        f"s3://{processed_bucket}/{file_key}"
+    )
+    logger.info(f"finished reading parquet file for fact_sales_order from {processed_bucket}")
+    
+    
+    logger.info(f"loading fact_sales_order in warehouse")
+    wr.postgresql.to_sql(
+        df = df,
+        table= 'fact_sales_order',
+        schema='public',
+        con=db_conn
+    )
+    logger.info(f"finished loading fact_sales_order")
     
 ##################################################################################
 # Utility functions
@@ -172,3 +269,5 @@ def check_file_exists_in_ingestion_bucket(bucket, filename):
         if ClientError.response["Error"]["Code"] == "404":
             logger.info(f"Key: '{filename}' does not exist!")
             return False
+        
+        
