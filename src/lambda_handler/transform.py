@@ -9,6 +9,12 @@ import botocore.exceptions
 import json
 import os
 
+import numpy as np
+
+##################################################################################
+# Lambda Handler
+##################################################################################
+    
 
 
 logger = logging.getLogger(__name__)
@@ -51,15 +57,16 @@ def lambda_handler(event, context):
     
     if datetime.now() < datetime(2025, 6, 11, 10, 50, 00): # manually alter this so the time on the right is 10 mins after current time
         dim_date(last_checked = last_checked, processed_bucket = processed_bucket, start='2020-01-01', end='2030-12-31')
-        
+ 
+ 
+ 
+ ##################################################################################
+# Helper functions for Lambda Handler 
+##################################################################################
+    
+       
     
     
-    
-    
-    
-    
-
-
 def dim_currency(last_checked,ingestion_bucket,processed_bucket):
 
     """
@@ -89,17 +96,31 @@ def dim_currency(last_checked,ingestion_bucket,processed_bucket):
 
     #dropping the columns that we dont need
     df_dim_currency=df_currency.drop(["Unnamed: 0", "created_at", "last_updated"], axis=1)
-
+    currencies = {
+        'GBP':'Great British Pound',
+        'USD':'United States Dollar',
+        'EUR':'Euro'
+    }
     #we have to add a new column(currency_name)
-    df_dim_currency=df_dim_currency.assign(currency_name=lambda x: x['currency_code'] + '_Name')
-    logger.info("dim_design dataframe has been created")
+    conditions = [
+    df_dim_currency['currency_code'] == 'GBP',
+    df_dim_currency['currency_code'] == 'USD',
+    df_dim_currency['currency_code'] == 'EUR'
+]
+
+    categories = ['Great British Pound', 'United States Dollar', 'Euro']
+
+    # Use np.select() to create the new column
+    df_dim_currency['currency_name'] = np.select(conditions, categories, default='Unknown')
+    logger.info("dim_currency dataframe has been created")
     
     #upload to s3 as a parquet file
     try:
-        wr.s3.to_parquet(df_dim_currency,f"s3://{processed_bucket}/dim_currency/{last_checked}.parquet")   #need processed bucket as a argument as well
+        wr.s3.to_parquet(df_dim_currency, f"s3://{processed_bucket}/dim_currency/{last_checked}.parquet")   #need processed bucket as a argument as well
         logger.info(f"dim_currency parquet has been uploaded to ingestion s3 at: s3://{processed_bucket}/currency/{last_checked}.csv")
     except botocore.exceptions.ClientError as client_error:
         logger.error(f"there has been a error in converting to parquet and uploading for dim_design {str(client_error)}")
+        raise client_error
 
 
 def dim_location(last_checked, ingestion_bucket, processed_bucket):
@@ -304,31 +325,7 @@ def dim_counterparty(last_checked, ingestion_bucket, processed_bucket, s3_client
     return 'dim_counterparty transformation complete'
 
 
-def check_file_exists_in_ingestion_bucket(bucket, filename):
 
-    """
-    Summary:
-    This function accesses the AWS S3 ingestion bucket and check if a specific file exists.
-    If it doesn't exist, it returns 'File' does not exist, and logs the error.
-
-    Args:
-    bucket, file_name
-
-    Returns:
-        Boolean.
-    """
-    s3_client = boto3.client("s3")
-    try:
-        s3_client.head_object(Bucket=bucket, Key=filename)
-        logger.info(f"Key: '{filename}' found!")
-        return True
-    except s3_client.exceptions.NoSuchBucket as NoSuchBucket: 
-        logger.info(f"Bucket: '{bucket}' does not exist!")
-        return False
-    except botocore.exceptions.ClientError as ClientError:
-        if ClientError.response["Error"]["Code"] == "404":
-            logger.info(f"Key: '{filename}' does not exist!")
-            return False
 
 
 def dim_date(last_checked, processed_bucket, start='2020-01-01', end='2030-12-31'):
@@ -421,3 +418,37 @@ def fact_sales_order(last_checked,ingestion_bucket,processed_bucket):
     return 'fact_sales transformation complete'
 
 
+
+
+##################################################################################
+# Utility functions
+##################################################################################
+    
+
+
+
+def check_file_exists_in_ingestion_bucket(bucket, filename):
+
+    """
+    Summary:
+    This function accesses the AWS S3 ingestion bucket and check if a specific file exists.
+    If it doesn't exist, it returns 'File' does not exist, and logs the error.
+
+    Args:
+    bucket, file_name
+
+    Returns:
+        Boolean.
+    """
+    s3_client = boto3.client("s3")
+    try:
+        s3_client.head_object(Bucket=bucket, Key=filename)
+        logger.info(f"Key: '{filename}' found!")
+        return True
+    except s3_client.exceptions.NoSuchBucket as NoSuchBucket: 
+        logger.info(f"Bucket: '{bucket}' does not exist!")
+        return False
+    except botocore.exceptions.ClientError as ClientError:
+        if ClientError.response["Error"]["Code"] == "404":
+            logger.info(f"Key: '{filename}' does not exist!")
+            return False

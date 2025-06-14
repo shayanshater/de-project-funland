@@ -34,15 +34,20 @@ def aws_credentials():
 class TestDimCurrency:
  
     def test_parquet_file_uploads_to_processed_bucket(self,s3_client):
+        
+        
+        
+        ingestion_bucket_name = 'ingestion_bucket'
+        processed_bucket_name = 'processed_bucket'
 
         s3_client.create_bucket(
-        Bucket='ingestion-bucket-33-elisa-q',
+        Bucket=ingestion_bucket_name,
         CreateBucketConfiguration={
         'LocationConstraint': 'eu-west-2',
             },
         )
         s3_client.create_bucket(
-        Bucket='processed-bucket-funlanf-e-l-3',
+        Bucket=processed_bucket_name,
         CreateBucketConfiguration={
         'LocationConstraint': 'eu-west-2',
             },
@@ -58,20 +63,20 @@ class TestDimCurrency:
         ]
         
         df = pd.DataFrame(new_rows, columns = columns)
-        wr.s3.to_csv(df, f"s3://ingestion-bucket-33-elisa-q/currency/{last_checked}.csv")
+        wr.s3.to_csv(df, f"s3://{ingestion_bucket_name}/currency/{last_checked}.csv")
         
         
         ## run the function, which reads from the mocked ingestion bucket
         # and transforms the data (drops two columns) and adds a new column(currency_name) and uploads to processed bucket
-        dim_currency(last_checked = last_checked, ingestion_bucket="ingestion-bucket-33-elisa-q", processed_bucket='processed-bucket-funlanf-e-l-3')
+        dim_currency(last_checked = last_checked, ingestion_bucket= ingestion_bucket_name, processed_bucket= processed_bucket_name)
         
         #read the file from processed bucket
         
-        df_result = wr.s3.read_parquet(f"s3://processed-bucket-funlanf-e-l-3/currency/{last_checked}.parquet")
+        df_result = wr.s3.read_parquet(f"s3://{processed_bucket_name}/dim_currency/{last_checked}.parquet")
         #create an expected dataframe to match up against our uploaded file
         dim_columns = ['currency_id', 'currency_code', 'currency_name']
         dim_new_rows = [
-            [0, 'GBP', 'GBP_Name']
+            [0, 'GBP', 'Great British Pound']
         ]
         df_expected = pd.DataFrame(dim_new_rows, columns = dim_columns)
         

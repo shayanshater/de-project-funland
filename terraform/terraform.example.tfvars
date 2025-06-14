@@ -1,1 +1,1 @@
-notification_email = "your email address"
+#notification_email = "your email address"
