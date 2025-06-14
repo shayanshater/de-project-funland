@@ -93,9 +93,9 @@ export AWS_SECRET_ACCESS_KEY=<your secret access key>
 export AWS_DEFAULT_REGION=<your default region>
 ```
 
-An AWS parameter needs to be put into parameter store with a parameter name of "last_checked". This parameter is a date in the format "YYYY-MM-DD HH:MM:SS:ffffff". This date should be some date before 2019, to ensure that all the data gets extracted from the database initially.\ 
+An AWS parameter is automatically put into AWS parameter store with a parameter name of "last_checked". This parameter is a date in the format "YYYY-MM-DD HH:MM:SS:ffffff". This date should be some date before 2019, to ensure that all the data gets extracted from the database initially.\ 
 
-In AWS secret manager, your should set up a secret with the name "db_creds" with 4 key value pairs e.g.:
+This terraform setup will also create a secret with 10 key value pairs of database credentials for initial and final databases (the information in terraform.example.tfvars must be completed).
 
 ```console
 {
@@ -104,6 +104,12 @@ In AWS secret manager, your should set up a secret with the name "db_creds" with
 "DB_HOST":<your database host>,
 "DB_NAME":<your database name>,
 "DB_PORT":<your database port>
+
+"WAREHOUSE_DB_USER":<your warehouse username>,
+"WAREHOUSE_DB_PASSWORD":<your warehouse password>,
+"WAREHOUSE_DB_HOST":<your warehouse host>,
+"WAREHOUSE_DB_NAME":<your warehouse name>,
+"WAREHOUSE_DB_PORT":<your warehouse port>
 }
 ```
 
