@@ -16,7 +16,7 @@ import awswrangler as wr
 import pandas as pd
 from awswrangler import exceptions
 
-
+load_dotenv()
 
 
 @pytest.fixture(scope="module")
@@ -46,7 +46,7 @@ def sm_client():
 
 @pytest.fixture(scope='function')
 def db_conn():
-    load_dotenv()
+    
     conn = Connection(
         user = os.getenv("totesys_user"),
         password = os.getenv("totesys_password"),
@@ -99,7 +99,7 @@ class TestGetDBCredentials():
         secret_string = json.dumps(secret_dict)
                 
         sm_client.create_secret(
-            Name = "db_creds",
+            Name = "warehouse_totesys_credentials",
             SecretString = secret_string
             )
         

@@ -94,7 +94,7 @@ class TestLoadDimStaff:
         
         
         dim_staff_columns = ['staff_id', 'first_name', 
-                                'last_name','department_name', 
+                            'last_name','department_name', 
                                 'location', 'email_address']
         
         dim_staff_rows = [[1, 'Jeremie', 
@@ -529,7 +529,7 @@ class TestLoadFactSalesOrder:
         'sales_staff_id','counterparty_id',
         'units_sold', 'unit_price',
         'currency_id', 'design_id',
-        'agreed_payment_date', 'agreed_delivery_date', # check 
+        'agreed_payment_date', 'agreed_delivery_date',
         'agreed_delivery_location_id']
         
         fact_sales_order_rows =fact_sales_order_new_rows= [

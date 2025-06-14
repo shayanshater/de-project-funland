@@ -159,7 +159,7 @@ def get_db_credentials(sm_client): # test and code complete
 
     """
     try:
-        response = sm_client.get_secret_value(SecretId = 'db_creds')
+        response = sm_client.get_secret_value(SecretId = 'warehouse_totesys_credentials')
         db_credentials = json.loads(response["SecretString"])
         return db_credentials
 

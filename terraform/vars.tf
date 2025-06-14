@@ -40,7 +40,7 @@ variable "scheduler" {
   default = "funland-etl-schedule"  
 }
 
-variable "notification_email" { # TODO: figure our how to use .tfvars
+variable "notification_email" {
   description = "Email address to receive Lambda failure notifications"
   default = "shayanshaterpoori@outlook.com"
   type        = string
@@ -49,4 +49,10 @@ variable "notification_email" { # TODO: figure our how to use .tfvars
 variable "aws_region" {
   type    = string
   default = "eu-west-2"
+}
+
+
+variable "db_credentials" {
+  type = string
+  sensitive = true
 }

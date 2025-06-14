@@ -53,13 +53,16 @@ def lambda_handler(event, context):
     dim_staff(last_checked, ingestion_bucket, processed_bucket)
     dim_counterparty(last_checked, ingestion_bucket, processed_bucket, s3_client)
     
+    response = s3_client.list_objects_v2(
+        Bucket = processed_bucket,
+        Prefix = 'dim_date/'
+    )
     
-    
-    if datetime.now() < datetime(2025, 6, 11, 10, 50, 00): # manually alter this so the time on the right is 10 mins after current time
+    if not response.get('Contents'):
         dim_date(last_checked = last_checked, processed_bucket = processed_bucket, start='2020-01-01', end='2030-12-31')
  
  
- 
+    return {"message":"success", "timestamp_to_transform": last_checked} 
  ##################################################################################
 # Helper functions for Lambda Handler 
 ##################################################################################

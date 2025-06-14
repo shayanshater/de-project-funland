@@ -2,7 +2,10 @@ import awswrangler as wr
 import logging
 import boto3
 import botocore
-
+import botocore.exceptions
+import json
+import os
+import pg8000
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -17,28 +20,39 @@ logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
     
+    sm_client = boto3.client('secretsmanager')
+    
+    
     last_checked = event['myresult']['timestamp_to_transform']
     processed_bucket = os.getenv('S3_PROCESSED_BUCKET')
+    db_credentials = get_db_credentials(sm_client)
     
-    
+    db_conn = pg8000.Connection(
+        user = db_credentials['WAREHOUSE_DB_USER'],
+        password = db_credentials['WAREHOUSE_DB_PASSWORD'],
+        database = db_credentials['WAREHOUSE_DB_NAME'],
+        host = db_credentials['WAREHOUSE_DB_HOST'],
+        port = db_credentials['WAREHOUSE_DB_PORT']
+    )
+
     
     logger.info("dim_staff has begun loading")
-    load_dim_staff()
+    load_dim_staff(last_checked, processed_bucket, db_conn)
     logger.info("dim_staff has finished loading")
     
     
     
     logger.info("dim_location has begun loading")
-    load_dim_location()
+    load_dim_location(last_checked, processed_bucket, db_conn)
     logger.info("dim_location has finished loading")
     
     
     logger.info("dim_currency has begun loading")
-    load_dim_currency()
+    load_dim_currency(last_checked, processed_bucket, db_conn)
     logger.info("dim_currency has finished loading")
     
     logger.info("dim_design has begun loading")
-    load_dim_design()
+    load_dim_design(last_checked, processed_bucket, db_conn)
     logger.info("dim_design has finished loading")
     
     logger.info("dim_counterparty has begun loading")
@@ -49,12 +63,12 @@ def lambda_handler(event, context):
 
 
     logger.info("dim_date has started loading")
-    load_dim_date()
+    load_dim_date(last_checked, processed_bucket, db_conn)
     logger.info("dim_date has finished loading")
 
 
     logger.info("fact_sales_order has started loading")
-    load_fact_sales_order()
+    load_fact_sales_order(last_checked, processed_bucket, db_conn)
     logger.info("fact_sales_order has finished loading")
 
 
@@ -78,12 +92,14 @@ def load_dim_staff(last_checked, processed_bucket, db_conn):
     logger.info(f"finished reading parquet file for dim_staff from {processed_bucket}")
     
     
+    
     logger.info(f"loading dim_staff in warehouse")
     wr.postgresql.to_sql(
         df = df,
         table= 'dim_staff',
         schema='public',
-        con=db_conn
+        con=db_conn,
+        use_column_names=True
     )
     logger.info(f"finished loading dim_staff")
     
@@ -108,7 +124,8 @@ def load_dim_location(last_checked, processed_bucket, db_conn):
         df = df,
         table= 'dim_location',
         schema='public',
-        con=db_conn
+        con=db_conn,
+        use_column_names=True
     )
     logger.info(f"finished loading dim_location")
     
@@ -135,7 +152,8 @@ def load_dim_currency(last_checked, processed_bucket, db_conn):
         df = df,
         table= 'dim_currency',
         schema='public',
-        con=db_conn
+        con=db_conn,
+        use_column_names=True
     )
     logger.info(f"finished loading dim_currency")
     
@@ -159,7 +177,8 @@ def load_dim_design(last_checked, processed_bucket, db_conn):
         df = df,
         table= 'dim_design',
         schema='public',
-        con=db_conn
+        con=db_conn,
+        use_column_names=True
     )
     logger.info(f"finished loading dim_design")
     
@@ -184,7 +203,8 @@ def load_dim_counterparty(last_checked, processed_bucket, db_conn):
         df = df,
         table= 'dim_counterparty',
         schema='public',
-        con=db_conn
+        con=db_conn,
+        use_column_names=True
     )
     logger.info(f"finished loading dim_counterparty")
     
@@ -209,7 +229,8 @@ def load_dim_date(last_checked, processed_bucket, db_conn):
         df = df,
         table= 'dim_date',
         schema='public',
-        con=db_conn
+        con=db_conn,
+        use_column_names=True
     )
     logger.info(f"finished loading dim_date")
     
@@ -235,7 +256,8 @@ def load_fact_sales_order(last_checked, processed_bucket, db_conn):
         df = df,
         table= 'fact_sales_order',
         schema='public',
-        con=db_conn
+        con=db_conn,
+        use_column_names=True
     )
     logger.info(f"finished loading fact_sales_order")
     
@@ -271,3 +293,24 @@ def check_file_exists_in_ingestion_bucket(bucket, filename):
             return False
         
         
+def get_db_credentials(sm_client): # test and code complete
+    """_summary_
+    This functions should return a dictionary of all 
+    the db credentials obtained from secret manager
+    
+    Returns:
+    dictionary of credentials
+    {"DB_USER":"totesys", DB_PASSWORD:".......}
+
+    """
+    try:
+        response = sm_client.get_secret_value(SecretId = 'warehouse_totesys_credentials')
+        db_credentials = json.loads(response["SecretString"])
+        return db_credentials
+
+    except sm_client.exceptions.ResourceNotFoundException as par_not_found_error:
+        logger.error(f"get_last_checked: The parameter was not found: {str(par_not_found_error)}")
+        raise par_not_found_error
+    except botocore.exceptions.ClientError as error:
+        logger.error(f"get_last_checked: There has been an error: {str(error)}")
+        raise error
