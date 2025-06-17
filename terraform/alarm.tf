@@ -1,4 +1,4 @@
-# filter the occurrences of "ERROR" in EXTRACT Lambda logs, immedietly alarm when there is one error
+# filter the occurrences of "ERROR" in EXTRACT Lambda logs, immediately alarm when there is one error
 resource "aws_cloudwatch_log_metric_filter" "error_filter_extract" {
   name           = "ErrorFilter-extract"
   log_group_name = "/aws/lambda/${aws_lambda_function.extract_lambda_handler.function_name}"
@@ -11,7 +11,7 @@ resource "aws_cloudwatch_log_metric_filter" "error_filter_extract" {
   }
 }
 
-# if error occurse trigger a notification to this SNS topic
+# if error occurs trigger a notification to this SNS topic
 resource "aws_cloudwatch_metric_alarm" "lambda_extract_alarm" {
   alarm_name          = "lambda-extract-error-alarm"
   comparison_operator = "GreaterThanThreshold"
