@@ -67,6 +67,45 @@ def s3_client():
 
 
 @mock_aws
+class TestExtractLambdaHandler:
+    def test_lambda_handler_works_correctly_when_initially_ran(self, ssm_client, s3_client, sm_client):
+        #setting up the prior requirements
+        
+        #parameter store
+        new_date = str(datetime.now())
+        ssm_client.put_parameter(
+            Name = 'last_checked',
+            Value = new_date,
+            Type = 'String'
+        )
+        
+        #secrets - db credentials
+        secret_dict = {
+            "DB_USER":"user",
+            "DB_PASSWORD":"password",
+            "DB_HOST":"host",
+            "DB_PORT":"5432",
+            "DB_NAME":"test_db"
+            }
+
+        secret_string = json.dumps(secret_dict)
+                
+        sm_client.create_secret(
+            Name = "warehouse_totesys_credentials",
+            SecretString = secret_string
+            )
+        
+        #create landing bucket
+        s3_client.create_bucket(
+            Bucket='testbucket',
+            CreateBucketConfiguration={
+                'LocationConstraint': 'eu-west-2'
+                }
+            )
+        
+
+
+@mock_aws
 class TestGetLastChecked:
     def test_get_last_checked_obtains_the_correct_date(self, ssm_client):
         new_date = str(datetime.now())
@@ -146,24 +185,6 @@ class TestDBConnection:
         with pytest.raises(InterfaceError):
             create_db_connection(db_credentials)
 
-
-# @mock_aws
-# class TestGetDataFromDB:
-#     @pytest.mark.skip()
-#     def test_all_tables_exist(self, conn):
-#         tables_to_check = ["counterparty", "currency", 
-#                     "department", "design", "staff", "sales_order",
-#                     "address", "payment", "purchase_order", 
-#                     "payment_type", "transaction"]
-        
-        
-#         for table_name in tables_to_check:
-#             base_query = f"""SELECT EXISTS (SELECT FROM information_schema.tables \
-#                         WHERE table_name = '{table_name}')"""
-#             expect = conn.run(base_query)
-#             assert expect == [[True]]
-
-    
 
 class TestGetBucketName:
     def test_get_bucket_name_gets_the_correct_bucket_name_which_is_dynamic(self):
