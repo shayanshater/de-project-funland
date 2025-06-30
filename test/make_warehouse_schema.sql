@@ -3,7 +3,7 @@ CREATE TABLE dim_date(
     year INT NOT NULL,
     month INT NOT NULL,
     day INT NOT NULL,
-    day_of_week VARCHAR NOT NULL,
+    day_name VARCHAR NOT NULL,
     month_name VARCHAR NOT NULL,
     quarter INT NOT NULL
 );
@@ -76,7 +76,7 @@ CREATE TABLE fact_sales_order(
     last_updated_time TIME NOT NULL,
     sales_staff_id INT NOT NULL REFERENCES dim_staff(staff_id),
     counterparty_id INT NOT NULL REFERENCES dim_counterparty(counterparty_id),
-    unit_sold INT NOT NULL,
+    units_sold INT NOT NULL,
     unit_price NUMERIC(10,2) NOT NULL,
     currency_id INT NOT NULL,
     design_id INT NOT NULL REFERENCES dim_design(design_id),

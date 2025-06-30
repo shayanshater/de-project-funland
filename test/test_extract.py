@@ -68,7 +68,7 @@ def s3_client():
 
 @mock_aws
 class TestGetLastChecked:
-    def test_get_last_checked_obtains_the_correct_vaiable(self, ssm_client):
+    def test_get_last_checked_obtains_the_correct_date(self, ssm_client):
         new_date = str(datetime.now())
         ssm_client.put_parameter(
             Name = 'last_checked',
@@ -118,6 +118,7 @@ class TestGetDBCredentials():
 # Test for db_connection
 
 class TestDBConnection:
+    @pytest.mark.skip("The remote database is not accessible, change the remote database details and remove this skip condition")
     def test_create_db_connection_creates_a_connection(self, sm_client):
         #assign
         db_credentials = get_db_credentials(sm_client)
